@@ -2,7 +2,7 @@
 
 A thin wrapper to
 [@testing-library/preact](https://github.com/testing-library/preact-testing-library)
-for testing a fresh application.
+for testing a [fresh](https://github.com/denoland/fresh) application.
 
 ## Usage
 
@@ -18,7 +18,7 @@ At first, you need to add this library as a dependency to `deno.json` or
     // ...
 
     // Add the following line to your deno.json
-    "$fresh-testing-library": "https://deno.land/x/fresh-testing-library/mod.ts"
+    "$fresh-testing-library": "https://deno.land/x/fresh-testing-library@$MODULE_VERSION/mod.ts"
   },
   // ...
 ```
