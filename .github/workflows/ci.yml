@@ -1,0 +1,34 @@
+name: CI
+on:
+  push:
+    branches:
+      - "main"
+  pull_request:
+    branches:
+      - "main"
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Get deno version
+        id: deno-version
+        run: |
+          echo "version=$(cat .deno-version)" >> ${GITHUB_OUTPUT}
+      - name: Set up Deno
+        uses: denoland/setup-deno@main
+        with:
+          deno-version: ${{ steps.deno-version.outputs.version }}
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.deno
+            ~/.cache/deno
+          key: ${{ runner.os }}-deno-${{ hashFiles('**/deno.json', '**/.deno-version') }}
+      - name: Run linters
+        run:
+          deno task check
+      - name: Run tests
+        run: |
+          deno task test
+
