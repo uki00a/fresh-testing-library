@@ -18,7 +18,7 @@ At first, you need to add this library as a dependency to `deno.json` or
     // ...
 
     // Add the following line to your deno.json
-    "$fresh-testing-library": "https://deno.land/x/fresh-testing-library@$MODULE_VERSION/mod.ts"
+    "$fresh-testing-library": "https://deno.land/x/fresh_testing_library@$MODULE_VERSION/mod.ts"
   },
   // ...
 ```
