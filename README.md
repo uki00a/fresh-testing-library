@@ -2,11 +2,12 @@
 
 A thin wrapper to
 [@testing-library/preact](https://github.com/testing-library/preact-testing-library)
-for testing a fresh applications
+for testing a fresh application.
 
 ## Usage
 
-At first, you need to add this library as a dependency to `deno.json` or `import_map.json`:
+At first, you need to add this library as a dependency to `deno.json` or
+`import_map.json`:
 
 ```jsonc
   // ...
