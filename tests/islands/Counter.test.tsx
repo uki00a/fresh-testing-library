@@ -25,7 +25,7 @@ describe("islands/Counter.tsx", () => {
     assertExists(screen.queryByText("10"));
 
     await fireEvent.click(minusOne);
-    assertExists(screen.queryByText("9"));
+    assertExists(screen.queryByText("9_"));
     assertFalse(screen.queryByText("10"));
   });
 });
