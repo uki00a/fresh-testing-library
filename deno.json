@@ -4,7 +4,7 @@
     "start": "deno run -A --watch=static/,routes/ ./demo/dev.ts",
     "update": "deno run -A -r https://fresh.deno.dev/update ./demo",
     "check": "deno fmt --check && deno lint",
-    "test": "deno test --allow-read --allow-env tests/"
+    "test": "deno test --allow-read --allow-env --doc tests/ README.md"
   },
   "imports": {
     "$fresh/": "https://deno.land/x/fresh@1.2.0/",
@@ -16,6 +16,7 @@
     "twind": "https://esm.sh/twind@0.16.19",
     "twind/": "https://esm.sh/twind@0.16.19/",
     "$std/": "https://deno.land/std@0.190.0/",
+    "🏝️/": "./demo/islands/",
     "$fresh-testing-library": "./mod.ts"
   },
   "compilerOptions": {
