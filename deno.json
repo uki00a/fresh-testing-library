@@ -3,6 +3,7 @@
   "tasks": {
     "start": "deno run -A --watch=static/,routes/ ./demo/dev.ts",
     "update": "deno run -A -r https://fresh.deno.dev/update ./demo",
+    "check": "deno fmt --check && deno lint",
     "test": "deno test --allow-read --allow-env tests/"
   },
   "imports": {
