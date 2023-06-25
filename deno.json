@@ -1,5 +1,6 @@
 {
   "lock": false,
+  "tes": { "exclude": ["demo"] },
   "tasks": {
     "start": "deno run -A --watch=static/,routes/ ./demo/dev.ts",
     "update": "deno run -A -r https://fresh.deno.dev/update ./demo",

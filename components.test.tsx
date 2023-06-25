@@ -7,7 +7,7 @@ import {
 } from "$std/testing/asserts.ts";
 import { afterEach, beforeAll, describe, it } from "$std/testing/bdd.ts";
 
-import Counter from "../../demo/islands/Counter.tsx";
+import Counter from "./demo/islands/Counter.tsx";
 
 describe("islands/Counter.tsx", () => {
   beforeAll(setup);
