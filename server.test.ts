@@ -106,5 +106,36 @@ describe("$fresh-testing-library/server", () => {
       assertEquals(resNotFound.status, 404);
       assertEquals(await resNotFound.text(), "This page is not found.");
     });
+
+    it("can accept both `Request` and `CreateHandlerContextOptions`", async () => {
+      const req = new Request("http://localhost:8019/users/5678");
+      const ctx = createHandlerContext(req, {
+        params: { id: "5678" },
+        state: { key: "value" },
+        response: () => Promise.resolve(new Response("OK")),
+        responseNotFound: () =>
+          Promise.resolve(
+            new Response("NotFound", {
+              status: 404,
+            }),
+          ),
+      });
+      assert(ctx.localAddr.transport === "tcp");
+      assertEquals(ctx.localAddr.hostname, "localhost");
+      assertEquals(ctx.localAddr.port, 8019);
+      assert(ctx.remoteAddr.transport === "tcp");
+      assertEquals(ctx.remoteAddr.hostname, "localhost");
+      assertEquals(ctx.remoteAddr.port, defaultDummyRemotePort);
+      assertEquals(ctx.params, { id: "5678" });
+      assertEquals(ctx.state, { key: "value" });
+
+      const res = await ctx.render();
+      assertEquals(res.status, 200);
+      assertEquals(await res.text(), "OK");
+
+      const resNotFound = await ctx.renderNotFound();
+      assertEquals(resNotFound.status, 404);
+      assertEquals(await resNotFound.text(), "NotFound");
+    });
   });
 });
