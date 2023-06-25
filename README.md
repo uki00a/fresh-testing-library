@@ -4,7 +4,7 @@ A thin wrapper to
 [@testing-library/preact](https://github.com/testing-library/preact-testing-library)
 for testing a [fresh](https://github.com/denoland/fresh) application.
 
-## Usage
+## Installation
 
 At first, you need to add this library as a dependency to `deno.json` or
 `import_map.json`:
@@ -23,7 +23,9 @@ At first, you need to add this library as a dependency to `deno.json` or
   // ...
 ```
 
-Then you can use this library as follows:
+## Usage
+
+### Testing island components
 
 ```tsx
 import { cleanup, fireEvent, render, setup } from "$fresh-testing-library";
@@ -55,6 +57,31 @@ describe("islands/Counter.tsx", () => {
     await fireEvent.click(minusOne);
     assertExists(screen.queryByText("9"));
     assertFalse(screen.queryByText("10"));
+  });
+});
+```
+
+### Testing fresh handlers
+
+You can test fresh handlers using `createHandlerContext` API:
+
+```ts
+import { createHandlerContext } from "$fresh-testing-library";
+
+import { assert, assertEquals } from "$std/testing/asserts.ts";
+import { describe, it } from "$std/testing/bdd.ts";
+
+import { handler } from "./demo/routes/api/users/[id].ts";
+
+describe("handler.GET", () => {
+  it("should work", async () => {
+    assert(handler.GET);
+
+    const req = new Request("http://localhost:8000/api/users/1");
+    const ctx = createHandlerContext(req, { params: { id: "1" } });
+    const res = await handler.GET(req, ctx);
+    assertEquals(res.status, 200);
+    assertEquals(await res.text(), "bob");
   });
 });
 ```
