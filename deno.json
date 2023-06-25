@@ -1,11 +1,11 @@
 {
   "lock": false,
-  "tes": { "exclude": ["demo"] },
+  "test": { "exclude": ["demo"] },
   "tasks": {
     "start": "deno run -A --watch=static/,routes/ ./demo/dev.ts",
     "update": "deno run -A -r https://fresh.deno.dev/update ./demo",
     "check": "deno fmt --check && deno lint",
-    "test": "deno test --allow-read --allow-env --doc tests/ README.md"
+    "test": "deno test --allow-read --allow-env --doc"
   },
   "imports": {
     "$fresh/": "https://deno.land/x/fresh@1.2.0/",
