@@ -9,11 +9,11 @@ import { afterEach, beforeAll, describe, it } from "$std/testing/bdd.ts";
 
 import Counter from "./demo/islands/Counter.tsx";
 
-describe("islands/Counter.tsx", () => {
+describe("$fresh-testing/library/components", () => {
   beforeAll(setup);
   afterEach(cleanup);
 
-  it("should work", async () => {
+  it("provides a thin wrapper to `@testing-library/preact`", async () => {
     const count = signal(9);
     const screen = render(<Counter count={count} />);
     const plusOne = screen.getByRole("button", { name: "+1" });
