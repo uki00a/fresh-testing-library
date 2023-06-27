@@ -1,5 +1,5 @@
-export * from "https://esm.sh/@testing-library/preact@3.2.3/pure?external=preact&pin=v126";
-import { JSDOM } from "https://esm.sh/jsdom@22.1.0?no-dts&pin=v126";
+export * from "./deps/preact-testing-library.ts";
+import { JSDOM } from "./deps/jsdom.ts";
 
 import vm from "node:vm";
 
