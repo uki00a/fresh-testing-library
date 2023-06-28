@@ -137,5 +137,37 @@ describe("$fresh-testing-library/server", () => {
       assertEquals(resNotFound.status, 404);
       assertEquals(await resNotFound.text(), "NotFound");
     });
+
+    it("can extract params from `Request` based on `manifest` option", async () => {
+      const { default: manifest } = await import("./demo/fresh.gen.ts");
+
+      {
+        const req = new Request("http://localhost:8000/api/users/123");
+        const ctx = createHandlerContext(req, { manifest });
+        assertEquals(ctx.params, { id: "123" });
+        assertEquals(ctx.state, {});
+        assert(ctx.localAddr.transport === "tcp");
+        assertEquals(ctx.localAddr.hostname, "localhost");
+        assertEquals(ctx.localAddr.port, 8000);
+        assert(ctx.remoteAddr.transport === "tcp");
+        assertEquals(ctx.remoteAddr.hostname, "localhost");
+        assertEquals(ctx.remoteAddr.port, defaultDummyRemotePort);
+      }
+
+      {
+        const req = new Request("https://localhost:8000/api/users/123");
+        const ctx = createHandlerContext(req, {
+          manifest,
+          params: { id: "9876" },
+        });
+        assertEquals(ctx.params, { id: "9876" });
+      }
+
+      {
+        const req = new Request("https://localhost:8000/no/such/route");
+        const ctx = createHandlerContext(req, { manifest });
+        assertEquals(ctx.params, {});
+      }
+    });
   });
 });

@@ -72,13 +72,16 @@ import { assert, assertEquals } from "$std/testing/asserts.ts";
 import { describe, it } from "$std/testing/bdd.ts";
 
 import { handler } from "./demo/routes/api/users/[id].ts";
+import manifest from "./demo/fresh.gen.ts";
 
 describe("handler.GET", () => {
   it("should work", async () => {
     assert(handler.GET);
 
-    const req = new Request("http://localhost:8000/api/users/1");
-    const ctx = createHandlerContext(req, { params: { id: "1" } });
+    const req = new Request("http://localhost:8000/api/users/123");
+    const ctx = createHandlerContext(req, { manifest });
+    assertEquals(ctx.params, { id: "123" });
+
     const res = await handler.GET(req, ctx);
     assertEquals(res.status, 200);
     assertEquals(await res.text(), "bob");

@@ -1,4 +1,5 @@
-import type { HandlerContext } from "$fresh/server.ts";
+import type { HandlerContext, Manifest } from "$fresh/server.ts";
+import { freshPathToURLPattern } from "./_util.ts";
 
 interface CreateHandlerContextOptions<
   TState extends Record<string, unknown> = Record<string, unknown>,
@@ -9,6 +10,7 @@ interface CreateHandlerContextOptions<
   remoteAddr: Deno.NetAddr;
   response: Response | HandlerContext["render"];
   responseNotFound: Response | HandlerContext["renderNotFound"];
+  manifest: Manifest;
 }
 
 export function createHandlerContext(
@@ -49,7 +51,7 @@ export function createHandlerContext<
   const request: Request = requestOrOptions;
   const url = new URL(request.url);
   const {
-    params = {},
+    params,
     state = {} as TState,
     response = new Response("OK"),
     responseNotFound = new Response("Not Found", { status: 404 }),
@@ -63,9 +65,11 @@ export function createHandlerContext<
       hostname: url.hostname,
       port: 49152,
     },
+    manifest,
   } = options ?? {};
+
   return {
-    params,
+    params: params ?? (manifest ? extractParams(request, manifest) : {}),
     state,
     localAddr,
     remoteAddr,
@@ -74,4 +78,26 @@ export function createHandlerContext<
       ? () => responseNotFound
       : responseNotFound,
   };
+}
+
+function extractParams(request: Request, manifest: Manifest) {
+  const url = new URL(request.url);
+  const params = Object.keys(manifest.routes).reduce(
+    (params: Record<string, string>, path) => {
+      const pattern = freshPathToURLPattern(path);
+      const match = pattern.exec(url.href);
+      if (match) {
+        const { groups } = match.pathname;
+        for (const name of Object.keys(groups)) {
+          const value = groups[name];
+          if (value) {
+            params[name] = value;
+          }
+        }
+      }
+      return params;
+    },
+    {},
+  );
+  return params;
 }
