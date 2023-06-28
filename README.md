@@ -78,9 +78,9 @@ describe("handler.GET", () => {
   it("should work", async () => {
     assert(handler.GET);
 
-    const req = new Request("http://localhost:8000/api/users/123");
+    const req = new Request("http://localhost:8000/api/users/1");
     const ctx = createHandlerContext(req, { manifest });
-    assertEquals(ctx.params, { id: "123" });
+    assertEquals(ctx.params, { id: "1" });
 
     const res = await handler.GET(req, ctx);
     assertEquals(res.status, 200);
