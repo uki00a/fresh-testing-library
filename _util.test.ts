@@ -1,4 +1,4 @@
-import { assert, assertEquals } from "$std/testing/asserts.ts";
+import { assertEquals } from "$std/testing/asserts.ts";
 import { describe, it } from "$std/testing/bdd.ts";
 
 import { freshPathToURLPattern } from "./_util.ts";
