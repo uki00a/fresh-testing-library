@@ -1,7 +1,8 @@
 import { createHandlerContext } from "./server.ts";
 import { handler } from "🗺/api/users/[id].ts";
 
-import { assert, assertEquals } from "$std/testing/asserts.ts";
+import { assert } from "$std/assert/assert.ts";
+import { assertEquals } from "$std/assert/assert_equals.ts";
 import { describe, it } from "$std/testing/bdd.ts";
 
 const defaultDummyLocalPort = 8020;
