@@ -22,6 +22,7 @@ describe("$fresh-testing-library/server", () => {
     it("can accept `Request`", () => {
       const req = new Request("http://localhost:8019");
       const ctx = createHandlerContext(req);
+      assert(ctx.localAddr);
       assert(ctx.localAddr.transport === "tcp");
       assertEquals(ctx.localAddr.hostname, "localhost");
       assertEquals(ctx.localAddr.port, 8019);
@@ -34,6 +35,7 @@ describe("$fresh-testing-library/server", () => {
 
     it("can accept an empty object", async () => {
       const ctx = createHandlerContext({});
+      assert(ctx.localAddr);
       assert(ctx.localAddr.transport === "tcp");
       assertEquals(ctx.localAddr.hostname, "localhost");
       assertEquals(ctx.localAddr.port, defaultDummyLocalPort);
@@ -53,6 +55,7 @@ describe("$fresh-testing-library/server", () => {
 
     it("works with no arguments", async () => {
       const ctx = createHandlerContext();
+      assert(ctx.localAddr);
       assert(ctx.localAddr.transport === "tcp");
       assertEquals(ctx.localAddr.hostname, "localhost");
       assertEquals(ctx.localAddr.port, defaultDummyLocalPort);
@@ -89,6 +92,7 @@ describe("$fresh-testing-library/server", () => {
           status: 404,
         }),
       });
+      assert(ctx.localAddr);
       assert(ctx.localAddr.transport === "tcp");
       assertEquals(ctx.localAddr.hostname, "127.0.0.1");
       assertEquals(ctx.localAddr.port, 3000);
@@ -120,6 +124,7 @@ describe("$fresh-testing-library/server", () => {
             }),
           ),
       });
+      assert(ctx.localAddr);
       assert(ctx.localAddr.transport === "tcp");
       assertEquals(ctx.localAddr.hostname, "localhost");
       assertEquals(ctx.localAddr.port, 8019);
@@ -146,6 +151,7 @@ describe("$fresh-testing-library/server", () => {
         const ctx = createHandlerContext(req, { manifest });
         assertEquals(ctx.params, { id: "123" });
         assertEquals(ctx.state, {});
+        assert(ctx.localAddr);
         assert(ctx.localAddr.transport === "tcp");
         assertEquals(ctx.localAddr.hostname, "localhost");
         assertEquals(ctx.localAddr.port, 8000);
