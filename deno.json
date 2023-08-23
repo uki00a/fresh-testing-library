@@ -13,8 +13,8 @@
     "update": "deno run -A -r https://fresh.deno.dev/update .",
     "check": "deno fmt --check && deno lint",
     "test": "deno test --allow-read --allow-env --doc",
-    "build": "deno run -A dev.ts build",
-    "preview": "deno run -A main.ts"
+    "build": "deno run -A demo/dev.ts build",
+    "preview": "deno run -A demo/main.ts"
   },
   "imports": {
     "$fresh/": "https://deno.land/x/fresh@1.4.2/",
