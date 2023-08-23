@@ -1,2 +1,5 @@
 export * from "./components.ts";
-export { createHandlerContext } from "./server.ts";
+export {
+  createHandlerContext,
+  createMiddlewareHandlerContext,
+} from "./server.ts";

@@ -1,5 +1,9 @@
-import { createHandlerContext } from "./server.ts";
+import {
+  createHandlerContext,
+  createMiddlewareHandlerContext,
+} from "$fresh-testing-library/server.ts";
 import { handler } from "🗺/api/users/[id].ts";
+import { createLoggerMiddleware } from "🗺/(_middlewares)/logger.ts";
 
 import { assert } from "$std/assert/assert.ts";
 import { assertEquals } from "$std/assert/assert_equals.ts";
@@ -8,9 +12,14 @@ import { describe, it } from "$std/testing/bdd.ts";
 const defaultDummyLocalPort = 8020;
 const defaultDummyRemotePort = 49152;
 
+async function loadManifest() {
+  const { default: manifest } = await import("./demo/fresh.gen.ts");
+  return manifest;
+}
+
 describe("$fresh-testing-library/server", () => {
   describe("createHandlerContext", () => {
-    it("returns `HandlerContext` which can be passed to the fresh handler", async () => {
+    it("returns `HandlerContext` which can be passed to fresh handlers", async () => {
       assert(handler.GET);
 
       const req = new Request("http://localhost:3000/api/users/1");
@@ -145,7 +154,7 @@ describe("$fresh-testing-library/server", () => {
     });
 
     it("can extract params from `Request` based on `manifest` option", async () => {
-      const { default: manifest } = await import("./demo/fresh.gen.ts");
+      const manifest = await loadManifest();
 
       {
         const req = new Request("http://localhost:8000/api/users/123");
@@ -175,6 +184,27 @@ describe("$fresh-testing-library/server", () => {
         const ctx = createHandlerContext(req, { manifest });
         assertEquals(ctx.params, {});
       }
+    });
+  });
+
+  describe("createMiddlewareHandlerContext", () => {
+    it("returns `MiddlwareHandlerContext` which can be passed to fresh middlewares", async () => {
+      const messages: Array<string> = [];
+      const testingLogger = {
+        info(...args: Array<unknown>) {
+          messages.push(args.map(String).join(""));
+        },
+      };
+      const middleware = createLoggerMiddleware(testingLogger);
+      const manifest = await loadManifest();
+      const path = `/api/users/123`;
+      const req = new Request(`http://localhost:3000${path}`);
+      const ctx = createMiddlewareHandlerContext(req, { manifest });
+      await middleware(req, ctx);
+      assertEquals(messages, [
+        `<-- GET ${path}`,
+        `--> GET ${path} 200`,
+      ]);
     });
   });
 });
