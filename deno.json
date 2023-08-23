@@ -28,7 +28,8 @@
     "$std/": "https://deno.land/std@0.195.0/",
     "🏝️/": "./demo/islands/",
     "🗺/": "./demo/routes/",
-    "$fresh-testing-library": "./mod.ts"
+    "$fresh-testing-library": "./mod.ts",
+    "$fresh-testing-library/": "./"
   },
   "compilerOptions": {
     "jsx": "react-jsx",

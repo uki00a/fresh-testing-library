@@ -17,8 +17,9 @@ At first, you need to add this library as a dependency to `deno.json` or
     "$fresh/": "https://deno.land/x/fresh@1.2.0/",
     // ...
 
-    // Add the following line to your deno.json
-    "$fresh-testing-library": "https://deno.land/x/fresh_testing_library@$MODULE_VERSION/mod.ts"
+    // Add the following lines to your deno.json
+    "$fresh-testing-library": "https://deno.land/x/fresh_testing_library@$MODULE_VERSION/mod.ts",
+    "$fresh-testing-library/": "https://deno.land/x/fresh_testing_library@$MODULE_VERSION/"
   },
   // ...
 ```
@@ -87,4 +88,20 @@ describe("handler.GET", () => {
     assertEquals(await res.text(), "bob");
   });
 });
+```
+
+### Submodules
+
+This library provides submodules so that only necessary functions can be
+imported.
+
+```typescript
+import { createHandlerContext } from "$fresh-testing-library/server.ts";
+
+import {
+  cleanup,
+  fireEvent,
+  render,
+  setup,
+} from "$fresh-testing-library/components.ts";
 ```
