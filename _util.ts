@@ -1,4 +1,5 @@
 import { extname } from "node:path";
+import type { Manifest } from "$fresh/server.ts";
 
 const routeExtnames = [".tsx", ".jsx", ".mts", ".ts", ".js", ".mjs"];
 
@@ -44,4 +45,31 @@ function removeSuffix(s: string, suffix: string): string {
   return suffix.length > 0 && s.endsWith(suffix)
     ? s.slice(0, -suffix.length)
     : s;
+}
+
+const kDestinationKindInternal = "internal" as const;
+const kDesitinationKindRoute = "route" as const;
+const kDesitinationKindNotFound = "notFound" as const;
+// TODO: Add support for `"static"`.
+// const kDesitinationKindStatic = "static" as const;
+export function determineRouteDestinationKind(
+  path: string,
+  manifest?: Manifest,
+) {
+  if (path.startsWith("/_frsh")) {
+    return kDestinationKindInternal;
+  }
+
+  if (manifest == null) {
+    return kDesitinationKindNotFound;
+  }
+
+  for (const freshPath of Object.keys(manifest.routes)) {
+    const pattern = freshPathToURLPattern(freshPath);
+    if (pattern.test({ pathname: path })) {
+      return kDesitinationKindRoute;
+    }
+  }
+
+  return kDesitinationKindNotFound;
 }

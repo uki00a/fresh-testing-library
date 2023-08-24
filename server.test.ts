@@ -1,3 +1,7 @@
+import type {
+  HandlerContext,
+  MiddlewareHandlerContext,
+} from "$fresh/server.ts";
 import {
   createHandlerContext,
   createMiddlewareHandlerContext,
@@ -11,11 +15,6 @@ import { describe, it } from "$std/testing/bdd.ts";
 
 const defaultDummyLocalPort = 8020;
 const defaultDummyRemotePort = 49152;
-
-async function loadManifest() {
-  const { default: manifest } = await import("./demo/fresh.gen.ts");
-  return manifest;
-}
 
 describe("$fresh-testing-library/server", () => {
   describe("createHandlerContext", () => {
@@ -32,32 +31,19 @@ describe("$fresh-testing-library/server", () => {
     it("can accept `Request`", () => {
       const req = new Request("http://localhost:8019");
       const ctx = createHandlerContext(req);
-      assert(ctx.localAddr);
-      assert(ctx.localAddr.transport === "tcp");
-      assertEquals(ctx.localAddr.hostname, "localhost");
-      assertEquals(ctx.localAddr.port, 8019);
-      assert(ctx.remoteAddr.transport === "tcp");
-      assertEquals(ctx.remoteAddr.hostname, "localhost");
-      assertEquals(ctx.remoteAddr.port, defaultDummyRemotePort);
+      assertContextHasServerInfoForRequest(ctx, req);
       assertEquals(ctx.params, {});
       assertEquals(ctx.state, {});
     });
 
     it("can accept an empty object", async () => {
       const ctx = createHandlerContext({});
-      assert(ctx.localAddr);
-      assert(ctx.localAddr.transport === "tcp");
-      assertEquals(ctx.localAddr.hostname, "localhost");
-      assertEquals(ctx.localAddr.port, defaultDummyLocalPort);
-      assert(ctx.remoteAddr.transport === "tcp");
-      assertEquals(ctx.remoteAddr.hostname, "localhost");
-      assertEquals(ctx.remoteAddr.port, defaultDummyRemotePort);
+      assertContextHasDefaultServerInfo(ctx);
       assertEquals(ctx.params, {});
       assertEquals(ctx.state, {});
 
       const res = await ctx.render();
-      assertEquals(res.status, 200);
-      assertEquals(await res.text(), "OK");
+      await assertDefaultResponseAsync(res);
 
       const resNotFound = await ctx.renderNotFound();
       assertEquals(resNotFound.status, 404);
@@ -65,19 +51,12 @@ describe("$fresh-testing-library/server", () => {
 
     it("works with no arguments", async () => {
       const ctx = createHandlerContext();
-      assert(ctx.localAddr);
-      assert(ctx.localAddr.transport === "tcp");
-      assertEquals(ctx.localAddr.hostname, "localhost");
-      assertEquals(ctx.localAddr.port, defaultDummyLocalPort);
-      assert(ctx.remoteAddr.transport === "tcp");
-      assertEquals(ctx.remoteAddr.hostname, "localhost");
-      assertEquals(ctx.remoteAddr.port, defaultDummyRemotePort);
+      assertContextHasDefaultServerInfo(ctx);
       assertEquals(ctx.params, {});
       assertEquals(ctx.state, {});
 
       const res = await ctx.render();
-      assertEquals(res.status, 200);
-      assertEquals(await res.text(), "OK");
+      await assertDefaultResponseAsync(res);
 
       const resNotFound = await ctx.renderNotFound();
       assertEquals(resNotFound.status, 404);
@@ -122,7 +101,7 @@ describe("$fresh-testing-library/server", () => {
     });
 
     it("can accept both `Request` and `CreateHandlerContextOptions`", async () => {
-      const req = new Request("http://localhost:8019/users/5678");
+      const req = new Request("http://localhost:8020/users/5678");
       const ctx = createHandlerContext(req, {
         params: { id: "5678" },
         state: { key: "value" },
@@ -134,19 +113,12 @@ describe("$fresh-testing-library/server", () => {
             }),
           ),
       });
-      assert(ctx.localAddr);
-      assert(ctx.localAddr.transport === "tcp");
-      assertEquals(ctx.localAddr.hostname, "localhost");
-      assertEquals(ctx.localAddr.port, 8019);
-      assert(ctx.remoteAddr.transport === "tcp");
-      assertEquals(ctx.remoteAddr.hostname, "localhost");
-      assertEquals(ctx.remoteAddr.port, defaultDummyRemotePort);
+      assertContextHasServerInfoForRequest(ctx, req);
       assertEquals(ctx.params, { id: "5678" });
       assertEquals(ctx.state, { key: "value" });
 
       const res = await ctx.render();
-      assertEquals(res.status, 200);
-      assertEquals(await res.text(), "OK");
+      await assertDefaultResponseAsync(res);
 
       const resNotFound = await ctx.renderNotFound();
       assertEquals(resNotFound.status, 404);
@@ -157,17 +129,11 @@ describe("$fresh-testing-library/server", () => {
       const manifest = await loadManifest();
 
       {
-        const req = new Request("http://localhost:8000/api/users/123");
+        const req = new Request("http://localhost:8002/api/users/123");
         const ctx = createHandlerContext(req, { manifest });
         assertEquals(ctx.params, { id: "123" });
         assertEquals(ctx.state, {});
-        assert(ctx.localAddr);
-        assert(ctx.localAddr.transport === "tcp");
-        assertEquals(ctx.localAddr.hostname, "localhost");
-        assertEquals(ctx.localAddr.port, 8000);
-        assert(ctx.remoteAddr.transport === "tcp");
-        assertEquals(ctx.remoteAddr.hostname, "localhost");
-        assertEquals(ctx.remoteAddr.port, defaultDummyRemotePort);
+        assertContextHasServerInfoForRequest(ctx, req);
       }
 
       {
@@ -206,5 +172,154 @@ describe("$fresh-testing-library/server", () => {
         `--> GET ${path} 200`,
       ]);
     });
+
+    it("can accept `Request`", () => {
+      const req = new Request("http://localhost:8019");
+      const ctx = createMiddlewareHandlerContext(req);
+      assertContextHasServerInfoForRequest(ctx, req);
+      assertEquals(ctx.params, {});
+      assertEquals(ctx.state, {});
+      assertEquals(ctx.destination, "notFound");
+    });
+
+    it("can accept an empty object", async () => {
+      const ctx = createMiddlewareHandlerContext({});
+      assertContextHasDefaultServerInfo(ctx);
+      assertEquals(ctx.params, {});
+      assertEquals(ctx.state, {});
+      assertEquals(ctx.destination, "notFound");
+
+      const res = await ctx.next();
+      await assertDefaultResponseAsync(res);
+    });
+
+    it("works with no arguments", async () => {
+      const ctx = createMiddlewareHandlerContext();
+      assertContextHasDefaultServerInfo(ctx);
+      assertEquals(ctx.params, {});
+      assertEquals(ctx.state, {});
+      assertEquals(ctx.destination, "notFound");
+
+      const res = await ctx.next();
+      await assertDefaultResponseAsync(res);
+    });
+
+    it("can accept `CreateMiddlewareHandlerContextOptions`", async () => {
+      const ctx = createMiddlewareHandlerContext({
+        localAddr: {
+          transport: "tcp",
+          hostname: "127.0.0.1",
+          port: 3001,
+        },
+        remoteAddr: {
+          transport: "tcp",
+          hostname: "localhost",
+          port: 50001,
+        },
+        params: { filename: "test.txt" },
+        state: { user: "foobar" },
+        response: new Response("testing"),
+        destination: "static",
+      });
+      assert(ctx.localAddr);
+      assert(ctx.localAddr.transport === "tcp");
+      assertEquals(ctx.localAddr.hostname, "127.0.0.1");
+      assertEquals(ctx.localAddr.port, 3001);
+      assert(ctx.remoteAddr.transport === "tcp");
+      assertEquals(ctx.remoteAddr.hostname, "localhost");
+      assertEquals(ctx.remoteAddr.port, 50001);
+      assertEquals(ctx.params, { filename: "test.txt" });
+      assertEquals(ctx.state, { user: "foobar" });
+      assertEquals(ctx.destination, "static");
+
+      const res = await ctx.next();
+      assertEquals(res.status, 200);
+      assertEquals(await res.text(), "testing");
+    });
+
+    it("can accept both `Request` and `CreateMiddlewareHandlerContextOptions`", async () => {
+      const req = new Request("http://localhost:8021/books/924");
+      const ctx = createMiddlewareHandlerContext(req, {
+        params: { id: "924" },
+        state: { num: 12345 },
+        response: new Response("dummy response"),
+        destination: "route",
+      });
+      assertContextHasServerInfoForRequest(ctx, req);
+      assertEquals(ctx.params, { id: "924" });
+      assertEquals(ctx.state, { num: 12345 });
+      assertEquals(ctx.destination, "route");
+
+      const res = await ctx.next();
+      assertEquals(res.status, 200);
+      assertEquals(await res.text(), "dummy response");
+    });
+
+    it("can extract params from `Request` and infer `destination` based on `manifest` option", async () => {
+      const manifest = await loadManifest();
+
+      {
+        const req = new Request("http://localhost:8003/api/users/9999");
+        const ctx = createMiddlewareHandlerContext(req, { manifest });
+        assertEquals(ctx.params, { id: "9999" });
+        assertEquals(ctx.state, {});
+        assertEquals(ctx.destination, "route");
+        assertContextHasServerInfoForRequest(ctx, req);
+      }
+
+      {
+        const req = new Request("https://localhost:8004/api/users/879");
+        const ctx = createMiddlewareHandlerContext(req, {
+          manifest,
+          params: { id: "123456" },
+        });
+        assertEquals(ctx.params, { id: "123456" });
+        assertEquals(ctx.destination, "route");
+      }
+
+      {
+        const req = new Request("https://localhost:8005/no/such/route");
+        const ctx = createMiddlewareHandlerContext(req, { manifest });
+        assertEquals(ctx.params, {});
+        assertEquals(ctx.destination, "notFound");
+      }
+    });
   });
 });
+
+async function loadManifest() {
+  const { default: manifest } = await import("./demo/fresh.gen.ts");
+  return manifest;
+}
+
+function assertContextHasDefaultServerInfo(
+  ctx: HandlerContext | MiddlewareHandlerContext,
+) {
+  assert(ctx.localAddr);
+  assert(ctx.localAddr.transport === "tcp");
+  assertEquals(ctx.localAddr.hostname, "localhost");
+  assertEquals(ctx.localAddr.port, defaultDummyLocalPort);
+  assert(ctx.remoteAddr.transport === "tcp");
+  assertEquals(ctx.remoteAddr.hostname, "localhost");
+  assertEquals(ctx.remoteAddr.port, defaultDummyRemotePort);
+}
+
+function assertContextHasServerInfoForRequest(
+  ctx: HandlerContext | MiddlewareHandlerContext,
+  req: Request,
+) {
+  const url = new URL(req.url);
+  const port = Number.parseInt(url.port);
+  assert(ctx.localAddr);
+  assert(ctx.localAddr.transport === "tcp");
+  assertEquals(ctx.localAddr.hostname, url.hostname);
+  assertEquals(ctx.localAddr.port, port);
+  assert(ctx.remoteAddr.transport === "tcp");
+  assertEquals(ctx.remoteAddr.hostname, url.hostname);
+  assertEquals(ctx.remoteAddr.port, defaultDummyRemotePort);
+}
+
+async function assertDefaultResponseAsync(res: Response) {
+  assertEquals(res.status, 200);
+  assertEquals(await res.text(), "OK");
+}

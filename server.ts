@@ -3,7 +3,10 @@ import type {
   Manifest,
   MiddlewareHandlerContext,
 } from "$fresh/server.ts";
-import { freshPathToURLPattern } from "./_util.ts";
+import {
+  determineRouteDestinationKind,
+  freshPathToURLPattern,
+} from "./_util.ts";
 
 interface CreateHandlerContextOptions<
   TState extends Record<string, unknown> = Record<string, unknown>,
@@ -128,8 +131,10 @@ export function createMiddlewareHandlerContext<
     response = createDefaultResponse(),
     localAddr = createDefaultLocalAddr(url),
     remoteAddr = createDefaultRemoteAddr(url),
-    // TODO: Determine `destination` based on `Manifest`, `Request`, etc.
-    destination = "route" as const,
+    destination = determineRouteDestinationKind(
+      url.pathname,
+      options?.manifest,
+    ),
     manifest,
   } = options ?? {};
 
