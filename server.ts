@@ -1,5 +1,12 @@
-import type { HandlerContext, Manifest } from "$fresh/server.ts";
-import { freshPathToURLPattern } from "./_util.ts";
+import type {
+  HandlerContext,
+  Manifest,
+  MiddlewareHandlerContext,
+} from "$fresh/server.ts";
+import {
+  determineRouteDestinationKind,
+  freshPathToURLPattern,
+} from "./_util.ts";
 
 interface CreateHandlerContextOptions<
   TState extends Record<string, unknown> = Record<string, unknown>,
@@ -13,15 +20,29 @@ interface CreateHandlerContextOptions<
   manifest: Manifest;
 }
 
+interface CreateMiddlewareHandlerContextOptions<
+  TState extends Record<string, unknown> = Record<string, unknown>,
+> {
+  params: Record<string, string>;
+  state: TState;
+  localAddr: Deno.NetAddr;
+  remoteAddr: Deno.NetAddr;
+  response: Response;
+  manifest: Manifest;
+  destination: MiddlewareHandlerContext["destination"];
+}
+
 export function createHandlerContext(
   request: Request,
 ): HandlerContext<unknown, Record<string, unknown>>;
+
 export function createHandlerContext<
   TData = unknown,
   TState extends Record<string, unknown> = Record<string, unknown>,
 >(
   options?: Partial<CreateHandlerContextOptions<TState>>,
 ): HandlerContext<TData, TState>;
+
 export function createHandlerContext<
   TData = unknown,
   TState extends Record<string, unknown> = Record<string, unknown>,
@@ -29,6 +50,7 @@ export function createHandlerContext<
   request: Request,
   options?: Partial<CreateHandlerContextOptions<TState>>,
 ): HandlerContext<TData, TState>;
+
 export function createHandlerContext<
   TData = unknown,
   TState extends Record<string, unknown> = Record<string, unknown>,
@@ -39,11 +61,7 @@ export function createHandlerContext<
   if (!(requestOrOptions instanceof Request)) {
     const { localAddr, ...restOptions } = requestOrOptions ?? {};
     return createHandlerContext(
-      new Request(
-        `http://${localAddr?.hostname ?? "localhost"}:${
-          localAddr?.port ?? 8020
-        }`,
-      ),
+      createDefaultRequest(localAddr),
       restOptions,
     );
   }
@@ -53,18 +71,10 @@ export function createHandlerContext<
   const {
     params,
     state = {} as TState,
-    response = new Response("OK"),
+    response = createDefaultResponse(),
     responseNotFound = new Response("Not Found", { status: 404 }),
-    localAddr = {
-      transport: "tcp" as const,
-      hostname: url.hostname,
-      port: Number.parseInt(url.port),
-    },
-    remoteAddr = {
-      transport: "tcp" as const,
-      hostname: url.hostname,
-      port: 49152,
-    },
+    localAddr = createDefaultLocalAddr(url),
+    remoteAddr = createDefaultRemoteAddr(url),
     manifest,
   } = options ?? {};
 
@@ -77,6 +87,90 @@ export function createHandlerContext<
     renderNotFound: responseNotFound instanceof Response
       ? () => responseNotFound
       : responseNotFound,
+  };
+}
+
+export function createMiddlewareHandlerContext(
+  request: Request,
+): MiddlewareHandlerContext;
+
+export function createMiddlewareHandlerContext<
+  TState extends Record<string, unknown> = Record<string, unknown>,
+>(
+  options?: Partial<CreateMiddlewareHandlerContextOptions<TState>>,
+): MiddlewareHandlerContext<TState>;
+
+export function createMiddlewareHandlerContext<
+  TState extends Record<string, unknown> = Record<string, unknown>,
+>(
+  request: Request,
+  options?: Partial<CreateMiddlewareHandlerContextOptions<TState>>,
+): MiddlewareHandlerContext<TState>;
+
+export function createMiddlewareHandlerContext<
+  TState extends Record<string, unknown> = Record<string, unknown>,
+>(
+  requestOrOptions?:
+    | Request
+    | Partial<CreateMiddlewareHandlerContextOptions<TState>>,
+  options?: Partial<CreateMiddlewareHandlerContextOptions<TState>>,
+): MiddlewareHandlerContext<TState> {
+  if (!(requestOrOptions instanceof Request)) {
+    const { localAddr, ...restOptions } = requestOrOptions ?? {};
+    return createMiddlewareHandlerContext(
+      createDefaultRequest(localAddr),
+      restOptions,
+    );
+  }
+
+  const request: Request = requestOrOptions;
+  const url = new URL(request.url);
+  const {
+    params,
+    state = {} as TState,
+    response = createDefaultResponse(),
+    localAddr = createDefaultLocalAddr(url),
+    remoteAddr = createDefaultRemoteAddr(url),
+    destination = determineRouteDestinationKind(
+      url.pathname,
+      options?.manifest,
+    ),
+    manifest,
+  } = options ?? {};
+
+  return {
+    params: params ?? (manifest ? extractParams(request, manifest) : {}),
+    state,
+    localAddr,
+    remoteAddr,
+    destination,
+    next: () => Promise.resolve(response),
+  };
+}
+
+function createDefaultRequest(localAddr?: Deno.NetAddr): Request {
+  return new Request(
+    `http://${localAddr?.hostname ?? "localhost"}:${localAddr?.port ?? 8020}`,
+  );
+}
+
+function createDefaultResponse(): Response {
+  return new Response("OK");
+}
+
+function createDefaultLocalAddr(url: URL) {
+  return {
+    transport: "tcp" as const,
+    hostname: url.hostname,
+    port: Number.parseInt(url.port),
+  };
+}
+
+function createDefaultRemoteAddr(url: URL) {
+  return {
+    transport: "tcp" as const,
+    hostname: url.hostname,
+    port: 49152,
   };
 }
 

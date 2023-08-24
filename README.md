@@ -62,6 +62,39 @@ describe("islands/Counter.tsx", () => {
 });
 ```
 
+### Testing fresh middlewares
+
+You can test fresh middlewares using `createMiddlewareHandlerContext` API:
+
+```ts
+import { createMiddlewareHandlerContext } from "$fresh-testing-library";
+import { assert, assertEquals } from "$std/testing/asserts.ts";
+import { describe, it } from "$std/testing/bdd.ts";
+
+import { createLoggerMiddleware } from "./demo/routes/(_middlewares)/logger.ts";
+import manifest from "./demo/fresh.gen.ts";
+
+describe("createLoggerMiddleware", () => {
+  it("returns a middleware which logs the information about each request", async () => {
+    const messages: Array<string> = [];
+    const testingLogger = {
+      info(...args: Array<unknown>) {
+        messages.push(args.map(String).join(""));
+      },
+    };
+    const middleware = createLoggerMiddleware(testingLogger);
+    const path = `/api/users/123`;
+    const req = new Request(`http://localhost:3000${path}`);
+    const ctx = createMiddlewareHandlerContext(req, { manifest });
+    await middleware(req, ctx);
+    assertEquals(messages, [
+      `<-- GET ${path}`,
+      `--> GET ${path} 200`,
+    ]);
+  });
+});
+```
+
 ### Testing fresh handlers
 
 You can test fresh handlers using `createHandlerContext` API:

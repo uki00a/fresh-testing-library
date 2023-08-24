@@ -1,7 +1,10 @@
 import { assertEquals } from "$std/assert/assert_equals.ts";
 import { describe, it } from "$std/testing/bdd.ts";
 
-import { freshPathToURLPattern } from "./_util.ts";
+import {
+  determineRouteDestinationKind,
+  freshPathToURLPattern,
+} from "./_util.ts";
 
 describe("$fresh-testing-library/_util", () => {
   describe("freshPathToURLPattern", () => {
@@ -32,5 +35,20 @@ describe("$fresh-testing-library/_util", () => {
         );
       }
     });
+  });
+
+  describe("determineRouteDestinationKind", () => {
+    for (
+      const [given, expected] of [
+        ["/_frsh/refresh.js", "internal"],
+        ["/api/users/1234", "route"],
+        ["/api/users/1234/foo", "notFound"],
+      ]
+    ) {
+      it(`should return "${expected}" for "${given}"`, async () => {
+        const { default: manifest } = await import("./demo/fresh.gen.ts");
+        assertEquals(determineRouteDestinationKind(given, manifest), expected);
+      });
+    }
   });
 });
