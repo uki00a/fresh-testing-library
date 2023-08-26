@@ -1,10 +1,7 @@
 import { assertEquals } from "$std/assert/assert_equals.ts";
 import { describe, it } from "$std/testing/bdd.ts";
 
-import {
-  determineRouteDestinationKind,
-  freshPathToURLPattern,
-} from "./mod.ts";
+import { determineRouteDestinationKind, freshPathToURLPattern } from "./mod.ts";
 
 describe("$fresh-testing-library/_util", () => {
   describe("freshPathToURLPattern", () => {
