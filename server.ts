@@ -2,10 +2,12 @@ import type {
   HandlerContext,
   Manifest,
   MiddlewareHandlerContext,
+  RouteContext,
 } from "$fresh/server.ts";
 import {
+  determineRoute,
   determineRouteDestinationKind,
-  freshPathToURLPattern,
+  extractParams,
 } from "./internal/fresh/mod.ts";
 
 interface CreateHandlerContextOptions<
@@ -18,6 +20,20 @@ interface CreateHandlerContextOptions<
   response: Response | HandlerContext["render"];
   responseNotFound: Response | HandlerContext["renderNotFound"];
   manifest: Manifest;
+}
+
+interface CreateRouteContextOptions<
+  // deno-lint-ignore no-explicit-any
+  TData = any,
+  TState extends Record<string, unknown> = Record<string, unknown>,
+> {
+  params: Record<string, string>;
+  state: TState;
+  localAddr: Deno.NetAddr;
+  remoteAddr: Deno.NetAddr;
+  responseNotFound: Response | RouteContext["renderNotFound"];
+  manifest: Manifest;
+  data: TData;
 }
 
 interface CreateMiddlewareHandlerContextOptions<
@@ -72,7 +88,7 @@ export function createHandlerContext<
     params,
     state = {} as TState,
     response = createDefaultResponse(),
-    responseNotFound = new Response("Not Found", { status: 404 }),
+    responseNotFound = createNotFoundResponse(),
     localAddr = createDefaultLocalAddr(url),
     remoteAddr = createDefaultRemoteAddr(url),
     manifest,
@@ -87,6 +103,67 @@ export function createHandlerContext<
     renderNotFound: responseNotFound instanceof Response
       ? () => responseNotFound
       : responseNotFound,
+  };
+}
+
+export function createRouteContext(
+  request: Request,
+): RouteContext<unknown, Record<string, unknown>>;
+
+export function createRouteContext<
+  TData = unknown,
+  TState extends Record<string, unknown> = Record<string, unknown>,
+>(
+  options?: Partial<CreateRouteContextOptions<TData, TState>>,
+): RouteContext<TData, TState>;
+
+export function createRouteContext<
+  TData = unknown,
+  TState extends Record<string, unknown> = Record<string, unknown>,
+>(
+  request: Request,
+  options?: Partial<CreateRouteContextOptions<TData, TState>>,
+): RouteContext<TData, TState>;
+
+export function createRouteContext<
+  TData = unknown,
+  TState extends Record<string, unknown> = Record<string, unknown>,
+>(
+  requestOrOptions?:
+    | Request
+    | Partial<CreateRouteContextOptions<TData, TState>>,
+  options?: Partial<CreateRouteContextOptions<TData, TState>>,
+): RouteContext<TData, TState> {
+  if (!(requestOrOptions instanceof Request)) {
+    const { localAddr, ...restOptions } = requestOrOptions ?? {};
+    return createRouteContext(
+      createDefaultRequest(localAddr),
+      restOptions,
+    );
+  }
+
+  const request: Request = requestOrOptions;
+  const url = new URL(request.url);
+  const {
+    params,
+    state = {} as TState,
+    responseNotFound = createNotFoundResponse(),
+    localAddr = createDefaultLocalAddr(url),
+    remoteAddr = createDefaultRemoteAddr(url),
+    manifest,
+    data = undefined as TData,
+  } = options ?? {};
+  return {
+    params: params ?? (manifest ? extractParams(request, manifest) : {}),
+    state,
+    localAddr,
+    remoteAddr,
+    renderNotFound: responseNotFound instanceof Response
+      ? () => responseNotFound
+      : responseNotFound,
+    url,
+    data,
+    route: determineRoute(request, manifest),
   };
 }
 
@@ -158,6 +235,10 @@ function createDefaultResponse(): Response {
   return new Response("OK");
 }
 
+function createNotFoundResponse(): Response {
+  return new Response("Not Found", { status: 404 });
+}
+
 function createDefaultLocalAddr(url: URL) {
   return {
     transport: "tcp" as const,
@@ -172,26 +253,4 @@ function createDefaultRemoteAddr(url: URL) {
     hostname: url.hostname,
     port: 49152,
   };
-}
-
-function extractParams(request: Request, manifest: Manifest) {
-  const url = new URL(request.url);
-  const params = Object.keys(manifest.routes).reduce(
-    (params: Record<string, string>, path) => {
-      const pattern = freshPathToURLPattern(path);
-      const match = pattern.exec(url.href);
-      if (match) {
-        const { groups } = match.pathname;
-        for (const name of Object.keys(groups)) {
-          const value = groups[name];
-          if (value) {
-            params[name] = value;
-          }
-        }
-      }
-      return params;
-    },
-    {},
-  );
-  return params;
 }
