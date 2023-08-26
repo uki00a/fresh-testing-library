@@ -1,14 +1,26 @@
 import { extname } from "node:path";
-import type { Manifest } from "$fresh/server.ts";
+import type { Manifest, RouteConfig, RouteContext } from "$fresh/server.ts";
 
 const routeExtnames = [".tsx", ".jsx", ".mts", ".ts", ".js", ".mjs"];
+const kFreshPathPrefix = "./routes" as const;
+const kIndexRoute = "index" as const;
+
+type FreshPath = `${typeof kFreshPathPrefix}/${string}`;
 
 /**
  * {@link https://developer.mozilla.org/en-US/docs/Web/API/URL_Pattern_API}
  */
-export function freshPathToURLPattern(path: string): URLPattern {
-  const parts = removeExtname(removePrefix(path, "./routes"), routeExtnames)
-    .split("/");
+export function freshPathToURLPattern(path: FreshPath): URLPattern {
+  return new URLPattern({
+    pathname: freshPathToPathToRegexPattern(path),
+  });
+}
+
+function freshPathToPathToRegexPattern(path: FreshPath): string {
+  const parts = removeExtname(
+    removePrefix(path, kFreshPathPrefix),
+    routeExtnames,
+  ).split("/");
   const pattern = parts.map(
     (part, i) => {
       if (part.startsWith("[...") && part.endsWith("]")) {
@@ -17,7 +29,7 @@ export function freshPathToURLPattern(path: string): URLPattern {
       } else if (part.startsWith("[") && part.endsWith("]")) {
         const name = part.slice(1, -1);
         return `:${name}`;
-      } else if (i + 1 === parts.length && part === "index") {
+      } else if (i + 1 === parts.length && part === kIndexRoute) {
         // `./routes/path/to/index.tsx`
         return "";
       } else {
@@ -25,11 +37,36 @@ export function freshPathToURLPattern(path: string): URLPattern {
       }
     },
   ).join("/");
-  return new URLPattern({
-    pathname: (pattern.endsWith("/") && path.endsWith("/")) || pattern === "/"
-      ? pattern
-      : removeSuffix(pattern, "/"),
-  });
+  return (pattern.endsWith("/") && path.endsWith("/")) || pattern === "/"
+    ? pattern
+    : removeSuffix(pattern, "/");
+}
+
+export function determineRoute(
+  request: Request,
+  manifest?: Manifest,
+): RouteContext["route"] {
+  if (manifest == null) {
+    return "/";
+  }
+
+  const url = new URL(request.url);
+  for (const freshPath of extractFreshPaths(manifest)) {
+    const module = manifest.routes[freshPath];
+    let pathToRegexpPattern = freshPathToPathToRegexPattern(freshPath);
+    if ("config" in module && (module.config as RouteConfig).routeOverride) {
+      pathToRegexpPattern = String(
+        (module.config as RouteConfig).routeOverride,
+      );
+    }
+    const pattern = new URLPattern({ pathname: pathToRegexpPattern });
+    const match = pattern.exec(url.href);
+    if (match) {
+      return pathToRegexpPattern;
+    }
+  }
+
+  return "/";
 }
 
 function removeExtname(path: string, knownExtnames: Array<string>): string {
@@ -64,7 +101,7 @@ export function determineRouteDestinationKind(
     return kDesitinationKindNotFound;
   }
 
-  for (const freshPath of Object.keys(manifest.routes)) {
+  for (const freshPath of extractFreshPaths(manifest)) {
     const pattern = freshPathToURLPattern(freshPath);
     if (pattern.test({ pathname: path })) {
       return kDesitinationKindRoute;
@@ -72,4 +109,30 @@ export function determineRouteDestinationKind(
   }
 
   return kDesitinationKindNotFound;
+}
+
+function extractFreshPaths(manifest: Manifest): Array<FreshPath> {
+  return Object.keys(manifest.routes) as Array<FreshPath>;
+}
+
+export function extractParams(request: Request, manifest: Manifest) {
+  const url = new URL(request.url);
+  const params = extractFreshPaths(manifest).reduce(
+    (params: Record<string, string>, path) => {
+      const pattern = freshPathToURLPattern(path);
+      const match = pattern.exec(url.href);
+      if (match) {
+        const { groups } = match.pathname;
+        for (const name of Object.keys(groups)) {
+          const value = groups[name];
+          if (value) {
+            params[name] = value;
+          }
+        }
+      }
+      return params;
+    },
+    {},
+  );
+  return params;
 }

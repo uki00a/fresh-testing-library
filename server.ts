@@ -5,8 +5,9 @@ import type {
   RouteContext,
 } from "$fresh/server.ts";
 import {
+  determineRoute,
   determineRouteDestinationKind,
-  freshPathToURLPattern,
+  extractParams,
 } from "./internal/fresh/mod.ts";
 
 interface CreateHandlerContextOptions<
@@ -30,7 +31,6 @@ interface CreateRouteContextOptions<
   state: TState;
   localAddr: Deno.NetAddr;
   remoteAddr: Deno.NetAddr;
-  response: Response | RouteContext["render"];
   responseNotFound: Response | RouteContext["renderNotFound"];
   manifest: Manifest;
   data: TData;
@@ -88,7 +88,7 @@ export function createHandlerContext<
     params,
     state = {} as TState,
     response = createDefaultResponse(),
-    responseNotFound = new Response("Not Found", { status: 404 }),
+    responseNotFound = createNotFoundResponse(),
     localAddr = createDefaultLocalAddr(url),
     remoteAddr = createDefaultRemoteAddr(url),
     manifest,
@@ -147,24 +147,23 @@ export function createRouteContext<
   const {
     params,
     state = {} as TState,
-    response = createDefaultResponse(),
-    responseNotFound = new Response("Not Found", { status: 404 }),
+    responseNotFound = createNotFoundResponse(),
     localAddr = createDefaultLocalAddr(url),
     remoteAddr = createDefaultRemoteAddr(url),
     manifest,
-    data,
+    data = undefined as TData,
   } = options ?? {};
   return {
     params: params ?? (manifest ? extractParams(request, manifest) : {}),
     state,
     localAddr,
     remoteAddr,
-    render: response instanceof Response ? () => response : response,
     renderNotFound: responseNotFound instanceof Response
       ? () => responseNotFound
       : responseNotFound,
     url,
     data,
+    route: determineRoute(request, manifest),
   };
 }
 
@@ -236,6 +235,10 @@ function createDefaultResponse(): Response {
   return new Response("OK");
 }
 
+function createNotFoundResponse(): Response {
+  return new Response("Not Found", { status: 404 });
+}
+
 function createDefaultLocalAddr(url: URL) {
   return {
     transport: "tcp" as const,
@@ -250,26 +253,4 @@ function createDefaultRemoteAddr(url: URL) {
     hostname: url.hostname,
     port: 49152,
   };
-}
-
-function extractParams(request: Request, manifest: Manifest) {
-  const url = new URL(request.url);
-  const params = Object.keys(manifest.routes).reduce(
-    (params: Record<string, string>, path) => {
-      const pattern = freshPathToURLPattern(path);
-      const match = pattern.exec(url.href);
-      if (match) {
-        const { groups } = match.pathname;
-        for (const name of Object.keys(groups)) {
-          const value = groups[name];
-          if (value) {
-            params[name] = value;
-          }
-        }
-      }
-      return params;
-    },
-    {},
-  );
-  return params;
 }
