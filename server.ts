@@ -2,6 +2,7 @@ import type {
   HandlerContext,
   Manifest,
   MiddlewareHandlerContext,
+  RouteContext,
 } from "$fresh/server.ts";
 import {
   determineRouteDestinationKind,
@@ -18,6 +19,21 @@ interface CreateHandlerContextOptions<
   response: Response | HandlerContext["render"];
   responseNotFound: Response | HandlerContext["renderNotFound"];
   manifest: Manifest;
+}
+
+interface CreateRouteContextOptions<
+  // deno-lint-ignore no-explicit-any
+  TData = any,
+  TState extends Record<string, unknown> = Record<string, unknown>,
+> {
+  params: Record<string, string>;
+  state: TState;
+  localAddr: Deno.NetAddr;
+  remoteAddr: Deno.NetAddr;
+  response: Response | RouteContext["render"];
+  responseNotFound: Response | RouteContext["renderNotFound"];
+  manifest: Manifest;
+  data: TData;
 }
 
 interface CreateMiddlewareHandlerContextOptions<
@@ -87,6 +103,68 @@ export function createHandlerContext<
     renderNotFound: responseNotFound instanceof Response
       ? () => responseNotFound
       : responseNotFound,
+  };
+}
+
+export function createRouteContext(
+  request: Request,
+): RouteContext<unknown, Record<string, unknown>>;
+
+export function createRouteContext<
+  TData = unknown,
+  TState extends Record<string, unknown> = Record<string, unknown>,
+>(
+  options?: Partial<CreateRouteContextOptions<TData, TState>>,
+): RouteContext<TData, TState>;
+
+export function createRouteContext<
+  TData = unknown,
+  TState extends Record<string, unknown> = Record<string, unknown>,
+>(
+  request: Request,
+  options?: Partial<CreateRouteContextOptions<TData, TState>>,
+): RouteContext<TData, TState>;
+
+export function createRouteContext<
+  TData = unknown,
+  TState extends Record<string, unknown> = Record<string, unknown>,
+>(
+  requestOrOptions?:
+    | Request
+    | Partial<CreateRouteContextOptions<TData, TState>>,
+  options?: Partial<CreateRouteContextOptions<TData, TState>>,
+): RouteContext<TData, TState> {
+  if (!(requestOrOptions instanceof Request)) {
+    const { localAddr, ...restOptions } = requestOrOptions ?? {};
+    return createRouteContext(
+      createDefaultRequest(localAddr),
+      restOptions,
+    );
+  }
+
+  const request: Request = requestOrOptions;
+  const url = new URL(request.url);
+  const {
+    params,
+    state = {} as TState,
+    response = createDefaultResponse(),
+    responseNotFound = new Response("Not Found", { status: 404 }),
+    localAddr = createDefaultLocalAddr(url),
+    remoteAddr = createDefaultRemoteAddr(url),
+    manifest,
+    data,
+  } = options ?? {};
+  return {
+    params: params ?? (manifest ? extractParams(request, manifest) : {}),
+    state,
+    localAddr,
+    remoteAddr,
+    render: response instanceof Response ? () => response : response,
+    renderNotFound: responseNotFound instanceof Response
+      ? () => responseNotFound
+      : responseNotFound,
+    url,
+    data,
   };
 }
 
