@@ -6,7 +6,7 @@ import type {
 import {
   determineRouteDestinationKind,
   freshPathToURLPattern,
-} from "./_util.ts";
+} from "./internal/fresh/mod.ts";
 
 interface CreateHandlerContextOptions<
   TState extends Record<string, unknown> = Record<string, unknown>,
