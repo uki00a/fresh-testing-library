@@ -1,10 +1,12 @@
 import type {
   HandlerContext,
   MiddlewareHandlerContext,
+  RouteContext,
 } from "$fresh/server.ts";
 import {
   createHandlerContext,
   createMiddlewareHandlerContext,
+  createRouteContext,
 } from "$fresh-testing-library/server.ts";
 import { handler } from "🗺/api/users/[id].ts";
 import { createLoggerMiddleware } from "🗺/(_middlewares)/logger.ts";
@@ -153,6 +155,133 @@ describe("$fresh-testing-library/server", () => {
     });
   });
 
+  describe("createRouteContext", () => {
+    it("can accept `Request`", async () => {
+      const req = new Request("http://localhost:8006");
+      const ctx = createRouteContext(req);
+      assertContextHasServerInfoForRequest(ctx, req);
+      assertEquals(ctx.params, {});
+      assertEquals(ctx.state, {});
+      assertEquals(ctx.route, "/");
+      assertEquals(ctx.data, undefined);
+      assertEquals(ctx.url.href, "http://localhost:8006/");
+
+      const res = await ctx.renderNotFound();
+      assertEquals(res.status, 404);
+    });
+
+    it("can accept an empty object", async () => {
+      const ctx = createRouteContext({});
+      assertContextHasDefaultServerInfo(ctx);
+      assertEquals(ctx.params, {});
+      assertEquals(ctx.state, {});
+      assertEquals(ctx.route, "/");
+      assertEquals(ctx.data, undefined);
+      assertEquals(ctx.url.href, "http://localhost:8020/");
+
+      const res = await ctx.renderNotFound();
+      assertEquals(res.status, 404);
+    });
+
+    it("works with no arguments", async () => {
+      const ctx = createRouteContext();
+      assertContextHasDefaultServerInfo(ctx);
+      assertEquals(ctx.params, {});
+      assertEquals(ctx.state, {});
+      assertEquals(ctx.route, "/");
+      assertEquals(ctx.data, undefined);
+      assertEquals(ctx.url.href, "http://localhost:8020/");
+
+      const res = await ctx.renderNotFound();
+      assertEquals(res.status, 404);
+    });
+
+    it("can accept `CreateRouteContextOptions`", async () => {
+      const now = Date.now();
+      const ctx = createRouteContext({
+        localAddr: {
+          transport: "tcp",
+          hostname: "127.0.0.1",
+          port: 3002,
+        },
+        remoteAddr: {
+          transport: "tcp",
+          hostname: "localhost",
+          port: 50002,
+        },
+        params: { id: "1234567" },
+        state: { now },
+        data: { name: "foo" },
+        responseNotFound: new Response("No such route", { status: 404 }),
+      });
+      assert(ctx.localAddr);
+      assert(ctx.localAddr.transport === "tcp");
+      assertEquals(ctx.localAddr.hostname, "127.0.0.1");
+      assertEquals(ctx.localAddr.port, 3002);
+      assert(ctx.remoteAddr.transport === "tcp");
+      assertEquals(ctx.remoteAddr.hostname, "localhost");
+      assertEquals(ctx.remoteAddr.port, 50002);
+      assertEquals(ctx.params, { id: "1234567" });
+      assertEquals(ctx.state, { now });
+      assertEquals(ctx.data, { name: "foo" });
+      assertEquals(ctx.route, "/");
+      assertEquals(ctx.url.href, "http://127.0.0.1:3002/");
+
+      const res = await ctx.renderNotFound();
+      assertEquals(res.status, 404);
+      assertEquals(await res.text(), "No such route");
+    });
+
+    it("can accept both `Request` and `CreateRouteContextOptions`", async () => {
+      const now = Date.now();
+      const req = new Request("http://localhost:8022/items/5432");
+      const ctx = createRouteContext(req, {
+        params: { itemID: "5432" },
+        state: { now },
+        data: { item: "barbaz" },
+      });
+      assertContextHasServerInfoForRequest(ctx, req);
+      assertEquals(ctx.params, { itemID: "5432" });
+      assertEquals(ctx.state, { now });
+      assertEquals(ctx.data, { item: "barbaz" });
+      assertEquals(ctx.route, "/");
+      assertEquals(ctx.url.href, "http://localhost:8022/items/5432");
+
+      const res = await ctx.renderNotFound();
+      assertEquals(res.status, 404);
+    });
+
+    it("can extract params from `Request` and infer `route` based on `manifest` option", async () => {
+      const manifest = await loadManifest();
+
+      {
+        const req = new Request("http://localhost:8007/api/users/9999");
+        const ctx = createRouteContext(req, { manifest });
+        assertEquals(ctx.params, { id: "9999" });
+        assertEquals(ctx.state, {});
+        assertEquals(ctx.route, "/api/users/:id");
+        assertContextHasServerInfoForRequest(ctx, req);
+      }
+
+      {
+        const req = new Request("https://localhost:8008/api/users/879");
+        const ctx = createRouteContext(req, {
+          manifest,
+          params: { id: "123456" },
+        });
+        assertEquals(ctx.params, { id: "123456" });
+        assertEquals(ctx.route, "/api/users/:id");
+      }
+
+      {
+        const req = new Request("https://localhost:8009/no/such/route");
+        const ctx = createRouteContext(req, { manifest });
+        assertEquals(ctx.params, {});
+        assertEquals(ctx.route, "/");
+      }
+    });
+  });
+
   describe("createMiddlewareHandlerContext", () => {
     it("returns `MiddlwareHandlerContext` which can be passed to fresh middlewares", async () => {
       const messages: Array<string> = [];
@@ -293,7 +422,7 @@ async function loadManifest() {
 }
 
 function assertContextHasDefaultServerInfo(
-  ctx: HandlerContext | MiddlewareHandlerContext,
+  ctx: HandlerContext | MiddlewareHandlerContext | RouteContext,
 ) {
   assert(ctx.localAddr);
   assert(ctx.localAddr.transport === "tcp");
@@ -305,7 +434,7 @@ function assertContextHasDefaultServerInfo(
 }
 
 function assertContextHasServerInfoForRequest(
-  ctx: HandlerContext | MiddlewareHandlerContext,
+  ctx: HandlerContext | MiddlewareHandlerContext | RouteContext,
   req: Request,
 ) {
   const url = new URL(req.url);
