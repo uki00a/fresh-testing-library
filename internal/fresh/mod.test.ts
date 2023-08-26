@@ -1,10 +1,7 @@
 import { assertEquals } from "$std/assert/assert_equals.ts";
 import { describe, it } from "$std/testing/bdd.ts";
 
-import {
-  determineRouteDestinationKind,
-  freshPathToURLPattern,
-} from "./_util.ts";
+import { determineRouteDestinationKind, freshPathToURLPattern } from "./mod.ts";
 
 describe("$fresh-testing-library/_util", () => {
   describe("freshPathToURLPattern", () => {
@@ -46,7 +43,7 @@ describe("$fresh-testing-library/_util", () => {
       ]
     ) {
       it(`should return "${expected}" for "${given}"`, async () => {
-        const { default: manifest } = await import("./demo/fresh.gen.ts");
+        const { default: manifest } = await import("../../demo/fresh.gen.ts");
         assertEquals(determineRouteDestinationKind(given, manifest), expected);
       });
     }
