@@ -49,14 +49,14 @@ describe("islands/Counter.tsx", () => {
     const screen = render(<Counter count={count} />);
     const plusOne = screen.getByRole("button", { name: "+1" });
     const minusOne = screen.getByRole("button", { name: "-1" });
-    assertExists(screen.queryByText("9"));
+    assertExists(screen.getByText("9"));
 
     await fireEvent.click(plusOne);
     assertFalse(screen.queryByText("9"));
-    assertExists(screen.queryByText("10"));
+    assertExists(screen.getByText("10"));
 
     await fireEvent.click(minusOne);
-    assertExists(screen.queryByText("9"));
+    assertExists(screen.getByText("9"));
     assertFalse(screen.queryByText("10"));
   });
 });
