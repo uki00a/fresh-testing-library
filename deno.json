@@ -12,7 +12,7 @@
     "start": "deno run -A --watch=static/,routes/ ./demo/dev.ts",
     "update": "deno run -A -r https://fresh.deno.dev/update .",
     "check": "deno fmt --check && deno lint",
-    "test": "deno test --allow-read --allow-env --doc",
+    "test": "deno test --allow-read --allow-env --allow-write=. --allow-net=esm.sh,deno.land --doc",
     "build": "deno run -A demo/dev.ts build",
     "preview": "deno run -A demo/main.ts"
   },
