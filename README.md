@@ -31,11 +31,9 @@ At first, you need to add this library as a dependency to `deno.json` or
 ```tsx
 import { cleanup, fireEvent, render, setup } from "$fresh-testing-library";
 import { signal } from "@preact/signals";
-import {
-  assertEquals,
-  assertExists,
-  assertFalse,
-} from "$std/testing/asserts.ts";
+import { assertEquals } from "$std/assert/assert_equals.ts";
+import { assertExists } from "$std/assert/assert_exists.ts";
+import { assertFalse } from "$std/assert/assert_false.ts";
 import { afterEach, beforeAll, describe, it } from "$std/testing/bdd.ts";
 
 import Counter from "🏝️/Counter.tsx";
@@ -68,7 +66,8 @@ You can test fresh middlewares using `createMiddlewareHandlerContext` API:
 
 ```ts
 import { createMiddlewareHandlerContext } from "$fresh-testing-library";
-import { assert, assertEquals } from "$std/testing/asserts.ts";
+import { assert } from "$std/assert/assert.ts";
+import { assertEquals } from "$std/assert/assert_equals.ts";
 import { describe, it } from "$std/testing/bdd.ts";
 
 import { createLoggerMiddleware } from "./demo/routes/(_middlewares)/logger.ts";
@@ -102,7 +101,8 @@ You can test fresh handlers using `createHandlerContext` API:
 ```ts
 import { createHandlerContext } from "$fresh-testing-library";
 
-import { assert, assertEquals } from "$std/testing/asserts.ts";
+import { assert } from "$std/assert/assert.ts";
+import { assertEquals } from "$std/assert/assert_equals.ts";
 import { describe, it } from "$std/testing/bdd.ts";
 
 import { handler } from "./demo/routes/api/users/[id].ts";
