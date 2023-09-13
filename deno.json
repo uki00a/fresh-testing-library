@@ -11,7 +11,8 @@
   "tasks": {
     "start": "deno run -A --watch=static/,routes/ ./demo/dev.ts",
     "update": "deno run -A -r https://fresh.deno.dev/update .",
-    "check": "deno fmt --check && deno lint",
+    "check": "deno fmt --check && deno lint && deno task check:imports",
+    "check:imports": "deno run --allow-read tools/check_imports.ts",
     "test": "deno test --allow-read --allow-env --allow-write=. --allow-net=esm.sh,deno.land --doc",
     "build": "deno run -A demo/dev.ts build",
     "preview": "deno run -A demo/main.ts"
