@@ -11,6 +11,7 @@ async function checkImports(): Promise<void> {
       skip: [
         /\.git/,
         /\/demo\//,
+        /\/testdata\//,
         /\/tools\//,
         /\.test.ts(x)?$/,
       ],
