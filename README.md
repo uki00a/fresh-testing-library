@@ -24,6 +24,12 @@ At first, you need to add this library as a dependency to `deno.json` or
   // ...
 ```
 
+## Permissions
+
+This package requires several permissions.
+
+See [docs/permissions](docs/permissions.md) for details.
+
 ## Usage
 
 ### Testing island components
@@ -128,7 +134,7 @@ describe("handler.GET", () => {
 This library provides submodules so that only necessary functions can be
 imported.
 
-```typescript
+```ts
 import { createHandlerContext } from "$fresh-testing-library/server.ts";
 
 import {
