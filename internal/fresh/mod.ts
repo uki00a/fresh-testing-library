@@ -1,4 +1,6 @@
 import { extname } from "node:path";
+import { h } from "preact";
+import { render } from "preact-render-to-string";
 import type {
   Manifest,
   MiddlewareHandler,
@@ -108,11 +110,32 @@ function findMatchingRouteAndPathPatternFromManifest(
 type MiddlewareModule = {
   handler: MiddlewareHandler | Array<MiddlewareHandler>;
 };
+type RouteModule = Exclude<Manifest["routes"][string], MiddlewareModule>;
 export function isRouteModule(
   module: Manifest["routes"][string],
-): module is Exclude<Manifest["routes"][string], MiddlewareModule> {
-  return (module as Exclude<Manifest["routes"][string], MiddlewareModule>)
+): module is RouteModule {
+  return (module as RouteModule)
     .default != null;
+}
+
+export async function renderRouteComponent(
+  routeComponent: Required<RouteModule>["default"],
+  request: Request,
+  ctx: RouteContext,
+): Promise<Response> {
+  const result = await routeComponent(
+    request,
+    ctx,
+  );
+  if (result instanceof Response) {
+    return result;
+  }
+  const html = render(h("div", {}, result));
+  return new Response(html, {
+    headers: {
+      "Content-Type": "text/html; charset=UTF-8",
+    },
+  });
 }
 
 function removeExtname(path: string, knownExtnames: Array<string>): string {

@@ -1,5 +1,3 @@
-import { h } from "preact";
-import { render } from "preact-render-to-string";
 import type {
   HandlerContext,
   Manifest,
@@ -12,6 +10,7 @@ import {
   extractParams,
   findMatchingRouteFromManifest,
   isRouteModule,
+  renderRouteComponent,
 } from "./internal/fresh/mod.ts";
 
 interface CreateHandlerContextOptions<
@@ -112,19 +111,11 @@ export function createHandlerContext<
             return createDefaultResponse();
           }
 
-          const result = await routeComponent(
+          return renderRouteComponent(
+            routeComponent,
             request,
             createRouteContext(request, { manifest }),
           );
-          if (result instanceof Response) {
-            return result;
-          }
-          const html = render(h("div", {}, result));
-          return new Response(html, {
-            headers: {
-              "Content-Type": "text/html; charset=UTF-8",
-            },
-          });
         }
 
         return createDefaultResponse();
