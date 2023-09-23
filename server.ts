@@ -1,3 +1,5 @@
+import { h } from "preact";
+import { render } from "preact-render-to-string";
 import type {
   HandlerContext,
   Manifest,
@@ -8,6 +10,8 @@ import {
   determineRoute,
   determineRouteDestinationKind,
   extractParams,
+  findMatchingRouteFromManifest,
+  isRouteModule,
 } from "./internal/fresh/mod.ts";
 
 interface CreateHandlerContextOptions<
@@ -87,19 +91,55 @@ export function createHandlerContext<
   const {
     params,
     state = {} as TState,
-    response = createDefaultResponse(),
+    response,
     responseNotFound = createNotFoundResponse(),
     localAddr = createDefaultLocalAddr(url),
     remoteAddr = createDefaultRemoteAddr(url),
     manifest,
   } = options ?? {};
 
+  function createRender() {
+    if (response instanceof Response) {
+      return () => response;
+    }
+
+    if (manifest) {
+      return async () => {
+        const route = await findMatchingRouteFromManifest(request, manifest);
+        if (route && isRouteModule(route)) {
+          const routeComponent = route.default;
+          if (routeComponent == null) {
+            return createDefaultResponse();
+          }
+
+          const result = await routeComponent(
+            request,
+            createRouteContext(request, { manifest }),
+          );
+          if (result instanceof Response) {
+            return result;
+          }
+          const html = render(h("div", {}, result));
+          return new Response(html, {
+            headers: {
+              "Content-Type": "text/html; charset=UTF-8",
+            },
+          });
+        }
+
+        return createDefaultResponse();
+      };
+    }
+
+    return () => createDefaultResponse();
+  }
+
   return {
     params: params ?? (manifest ? extractParams(request, manifest) : {}),
     state,
     localAddr,
     remoteAddr,
-    render: response instanceof Response ? () => response : response,
+    render: createRender(),
     renderNotFound: responseNotFound instanceof Response
       ? () => responseNotFound
       : responseNotFound,

@@ -153,6 +153,15 @@ describe("$fresh-testing-library/server", () => {
         assertEquals(ctx.params, {});
       }
     });
+
+    it("can render a page component from `Request` based on `manifest` option", async () => {
+      const manifest = await loadManifest();
+      const req = new Request("http://localhost:8003/users/1");
+      const ctx = createHandlerContext(req, { manifest });
+      const res = await ctx.render();
+      assertEquals(res.status, 200);
+      assertEquals(res.headers.get("Content-Type"), "text/html; charset=UTF-8");
+    });
   });
 
   describe("createRouteContext", () => {

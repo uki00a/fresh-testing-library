@@ -1,5 +1,10 @@
 import { extname } from "node:path";
-import type { Manifest, RouteConfig, RouteContext } from "$fresh/server.ts";
+import type {
+  Manifest,
+  MiddlewareHandler,
+  RouteConfig,
+  RouteContext,
+} from "$fresh/server.ts";
 
 const routeExtnames = [".tsx", ".jsx", ".mts", ".ts", ".js", ".mjs"];
 const kFreshPathPrefix = "./routes" as const;
@@ -99,6 +104,15 @@ function findMatchingRouteAndPathPatternFromManifest(
     }
   }
   return null;
+}
+type MiddlewareModule = {
+  handler: MiddlewareHandler | Array<MiddlewareHandler>;
+};
+export function isRouteModule(
+  module: Manifest["routes"][string],
+): module is Exclude<Manifest["routes"][string], MiddlewareModule> {
+  return (module as Exclude<Manifest["routes"][string], MiddlewareModule>)
+    .default != null;
 }
 
 function removeExtname(path: string, knownExtnames: Array<string>): string {
