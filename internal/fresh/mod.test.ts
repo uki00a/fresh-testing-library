@@ -6,6 +6,7 @@ import { assertType } from "$std/testing/types.ts";
 import {
   determineRoute,
   determineRouteDestinationKind,
+  findMatchingRouteFromManifest,
   freshPathToURLPattern,
 } from "./mod.ts";
 
@@ -57,7 +58,7 @@ describe("$fresh-testing-library/_util", () => {
 
     it("should return a `path-to-regexp` pattern based on `manifest`", async () => {
       const request = new Request("http://localhost:9876/api/users/1234");
-      const { default: manifest } = await import("../../demo/fresh.gen.ts");
+      const manifest = await loadManifest();
       assertEquals(determineRoute(request, manifest), "/api/users/:id");
     });
   });
@@ -71,9 +72,30 @@ describe("$fresh-testing-library/_util", () => {
       ]
     ) {
       it(`should return "${expected}" for "${given}"`, async () => {
-        const { default: manifest } = await import("../../demo/fresh.gen.ts");
+        const manifest = await loadManifest();
         assertEquals(determineRouteDestinationKind(given, manifest), expected);
       });
     }
   });
+
+  describe("findMatchingRouteFromManifest", () => {
+    it(`should return the maching route`, async () => {
+      const request = new Request("http://localhost:9876/users/9876");
+      const manifest = await loadManifest();
+      const route = findMatchingRouteFromManifest(request, manifest);
+      assertEquals(route, manifest.routes["./routes/users/[id].tsx"]);
+    });
+
+    it(`should return \`null\` when no route matches`, async () => {
+      const request = new Request("http://localhost:9876/users/9876/foo");
+      const manifest = await loadManifest();
+      const route = findMatchingRouteFromManifest(request, manifest);
+      assertEquals(route, null);
+    });
+  });
 });
+
+async function loadManifest() {
+  const { default: manifest } = await import("../../demo/fresh.gen.ts");
+  return manifest;
+}

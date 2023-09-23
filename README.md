@@ -135,7 +135,12 @@ You can test async route components by combining `createRouteContext()` and
 `render()`:
 
 ```ts
-import { cleanup, render, setup } from "$fresh-testing-library/components.ts";
+import {
+  cleanup,
+  getByText,
+  render,
+  setup,
+} from "$fresh-testing-library/components.ts";
 import { createRouteContext } from "$fresh-testing-library/server.ts";
 import { assertExists } from "$std/assert/assert_exists.ts";
 import { afterEach, beforeAll, describe, it } from "$std/testing/bdd.ts";
@@ -150,7 +155,8 @@ describe("routes/users/[id].tsx", () => {
     const req = new Request("http://localhost:8000/users/2");
     const ctx = createRouteContext<void>(req, { manifest });
     const screen = render(await UserDetail(req, ctx));
-    assertExists(screen.getByText("Hello bar!"));
+    const group = screen.getByRole("group");
+    assertExists(getByText(group, "bar"));
   });
 });
 ```

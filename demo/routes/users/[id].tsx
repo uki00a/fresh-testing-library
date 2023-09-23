@@ -12,8 +12,11 @@ export default defineRoute((_, ctx) => {
   }
 
   return (
-    <div>
-      Hello {maybeUser}!
-    </div>
+    <dl role="group">
+      <dt>ID</dt>
+      <dd>{ctx.params.id}</dd>
+      <dt>Name</dt>
+      <dd>{maybeUser}</dd>
+    </dl>
   );
 });

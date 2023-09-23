@@ -1,5 +1,12 @@
 import { extname } from "node:path";
-import type { Manifest, RouteConfig, RouteContext } from "$fresh/server.ts";
+import { h } from "preact";
+import { render } from "preact-render-to-string";
+import type {
+  Manifest,
+  MiddlewareHandler,
+  RouteConfig,
+  RouteContext,
+} from "$fresh/server.ts";
 
 const routeExtnames = [".tsx", ".jsx", ".mts", ".ts", ".js", ".mjs"];
 const kFreshPathPrefix = "./routes" as const;
@@ -42,6 +49,21 @@ function freshPathToPathToRegexPattern(path: FreshPath): string {
     : removeSuffix(pattern, "/");
 }
 
+export function findMatchingRouteFromManifest(
+  request: Request,
+  manifest: Manifest,
+): Manifest["routes"][string] | null {
+  const maybeRouteAndPattern = findMatchingRouteAndPathPatternFromManifest(
+    request,
+    manifest,
+  );
+  if (maybeRouteAndPattern == null) {
+    return null;
+  }
+  const [route] = maybeRouteAndPattern;
+  return route;
+}
+
 export function determineRoute(
   request: Request,
   manifest?: Manifest,
@@ -50,6 +72,24 @@ export function determineRoute(
     return "/";
   }
 
+  const maybeRouteAndPathPattern = findMatchingRouteAndPathPatternFromManifest(
+    request,
+    manifest,
+  );
+  if (maybeRouteAndPathPattern == null) {
+    return "/";
+  }
+
+  const [, pattern] = maybeRouteAndPathPattern;
+  return pattern;
+}
+
+type MatchingRouteAndPathPattern = [Manifest["routes"][string], string];
+
+function findMatchingRouteAndPathPatternFromManifest(
+  request: Request,
+  manifest: Manifest,
+): MatchingRouteAndPathPattern | null {
   const url = new URL(request.url);
   for (const freshPath of extractFreshPaths(manifest)) {
     const module = manifest.routes[freshPath];
@@ -62,11 +102,40 @@ export function determineRoute(
     const pattern = new URLPattern({ pathname: pathToRegexpPattern });
     const match = pattern.exec(url.href);
     if (match) {
-      return pathToRegexpPattern;
+      return [module, pathToRegexpPattern];
     }
   }
+  return null;
+}
+type MiddlewareModule = {
+  handler: MiddlewareHandler | Array<MiddlewareHandler>;
+};
+type RouteModule = Exclude<Manifest["routes"][string], MiddlewareModule>;
+export function isRouteModule(
+  module: Manifest["routes"][string],
+): module is RouteModule {
+  return (module as RouteModule)
+    .default != null;
+}
 
-  return "/";
+export async function renderRouteComponent(
+  routeComponent: Required<RouteModule>["default"],
+  request: Request,
+  ctx: RouteContext,
+): Promise<Response> {
+  const result = await routeComponent(
+    request,
+    ctx,
+  );
+  if (result instanceof Response) {
+    return result;
+  }
+  const html = render(h("div", {}, result));
+  return new Response(html, {
+    headers: {
+      "Content-Type": "text/html; charset=UTF-8",
+    },
+  });
 }
 
 function removeExtname(path: string, knownExtnames: Array<string>): string {

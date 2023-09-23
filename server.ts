@@ -8,6 +8,9 @@ import {
   determineRoute,
   determineRouteDestinationKind,
   extractParams,
+  findMatchingRouteFromManifest,
+  isRouteModule,
+  renderRouteComponent,
 } from "./internal/fresh/mod.ts";
 
 interface CreateHandlerContextOptions<
@@ -87,19 +90,47 @@ export function createHandlerContext<
   const {
     params,
     state = {} as TState,
-    response = createDefaultResponse(),
+    response,
     responseNotFound = createNotFoundResponse(),
     localAddr = createDefaultLocalAddr(url),
     remoteAddr = createDefaultRemoteAddr(url),
     manifest,
   } = options ?? {};
 
+  function createRender() {
+    if (response instanceof Response) {
+      return () => response;
+    }
+
+    if (manifest) {
+      return async () => {
+        const route = await findMatchingRouteFromManifest(request, manifest);
+        if (route && isRouteModule(route)) {
+          const routeComponent = route.default;
+          if (routeComponent == null) {
+            return createDefaultResponse();
+          }
+
+          return renderRouteComponent(
+            routeComponent,
+            request,
+            createRouteContext(request, { manifest }),
+          );
+        }
+
+        return createDefaultResponse();
+      };
+    }
+
+    return () => createDefaultResponse();
+  }
+
   return {
     params: params ?? (manifest ? extractParams(request, manifest) : {}),
     state,
     localAddr,
     remoteAddr,
-    render: response instanceof Response ? () => response : response,
+    render: createRender(),
     renderNotFound: responseNotFound instanceof Response
       ? () => responseNotFound
       : responseNotFound,

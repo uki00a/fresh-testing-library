@@ -54,7 +54,8 @@ function isAllowedSpecifier(specifier: string): boolean {
   }
 
   // Bare specifiers
-  return specifier.startsWith("$fresh/");
+  return specifier.startsWith("$fresh/") ||
+    specifier === "preact-render-to-string" || specifier === "preact";
 }
 
 function isRelative(specifier: string): boolean {
