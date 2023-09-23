@@ -15,6 +15,8 @@ import { assert } from "$std/assert/assert.ts";
 import { assertEquals } from "$std/assert/assert_equals.ts";
 import { describe, it } from "$std/testing/bdd.ts";
 
+import { cheerio } from "./deps/cheerio.ts";
+
 const defaultDummyLocalPort = 8020;
 const defaultDummyRemotePort = 49152;
 
@@ -161,6 +163,12 @@ describe("$fresh-testing-library/server", () => {
       const res = await ctx.render();
       assertEquals(res.status, 200);
       assertEquals(res.headers.get("Content-Type"), "text/html; charset=UTF-8");
+
+      const $ = cheerio.load(await res.text());
+      const $dd = $("dd");
+      assertEquals($dd.length, 2);
+      assertEquals($dd.eq(0).text(), "1");
+      assertEquals($dd.eq(1).text(), "foo");
     });
   });
 

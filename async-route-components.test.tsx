@@ -1,5 +1,10 @@
 import { createRouteContext } from "$fresh-testing-library/server.ts";
-import { cleanup, render, setup } from "$fresh-testing-library/components.ts";
+import {
+  cleanup,
+  getByText,
+  render,
+  setup,
+} from "$fresh-testing-library/components.ts";
 import { assertExists } from "$std/assert/assert_exists.ts";
 import { afterEach, beforeAll, describe, it } from "$std/testing/bdd.ts";
 import { default as UserDetail } from "./demo/routes/users/[id].tsx";
@@ -13,6 +18,8 @@ describe("testing async route components", () => {
     const req = new Request("http://localhost:8000/users/2");
     const ctx = createRouteContext<void>(req, { manifest });
     const screen = render(await UserDetail(req, ctx));
-    assertExists(screen.getByText("Hello bar!"));
+    const list = screen.getByRole("group");
+    assertExists(getByText(list, "2"));
+    assertExists(getByText(list, "bar"));
   });
 });
