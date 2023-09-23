@@ -42,6 +42,21 @@ function freshPathToPathToRegexPattern(path: FreshPath): string {
     : removeSuffix(pattern, "/");
 }
 
+export function findMatchingRouteFromManifest(
+  request: Request,
+  manifest: Manifest,
+): Manifest["routes"][string] | null {
+  const maybeRouteAndPattern = findMatchingRouteAndPathPatternFromManifest(
+    request,
+    manifest,
+  );
+  if (maybeRouteAndPattern == null) {
+    return null;
+  }
+  const [route] = maybeRouteAndPattern;
+  return route;
+}
+
 export function determineRoute(
   request: Request,
   manifest?: Manifest,
@@ -50,6 +65,24 @@ export function determineRoute(
     return "/";
   }
 
+  const maybeRouteAndPathPattern = findMatchingRouteAndPathPatternFromManifest(
+    request,
+    manifest,
+  );
+  if (maybeRouteAndPathPattern == null) {
+    return "/";
+  }
+
+  const [, pattern] = maybeRouteAndPathPattern;
+  return pattern;
+}
+
+type MatchingRouteAndPathPattern = [Manifest["routes"][string], string];
+
+function findMatchingRouteAndPathPatternFromManifest(
+  request: Request,
+  manifest: Manifest,
+): MatchingRouteAndPathPattern | null {
   const url = new URL(request.url);
   for (const freshPath of extractFreshPaths(manifest)) {
     const module = manifest.routes[freshPath];
@@ -62,11 +95,10 @@ export function determineRoute(
     const pattern = new URLPattern({ pathname: pathToRegexpPattern });
     const match = pattern.exec(url.href);
     if (match) {
-      return pathToRegexpPattern;
+      return [module, pathToRegexpPattern];
     }
   }
-
-  return "/";
+  return null;
 }
 
 function removeExtname(path: string, knownExtnames: Array<string>): string {
