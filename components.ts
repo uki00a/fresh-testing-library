@@ -1,16 +1,24 @@
-export * from "./deps/preact-testing-library.ts";
+import { cleanup as _cleanup } from "./deps/preact-testing-library.ts";
 import { JSDOM } from "./deps/jsdom.ts";
+import { setUpClipboard } from "./deps/jest-clipboard.ts";
+
+export * from "./deps/preact-testing-library.ts";
 
 import vm from "node:vm";
+
+function createJSDOM() {
+  const isContext = vm.isContext;
+  vm.isContext = () => false;
+  const jsdom = new JSDOM();
+  vm.isContext = isContext;
+  return jsdom;
+}
 
 export function setup() {
   if (globalThis.document) return;
 
-  const isContext = vm.isContext;
-  vm.isContext = () => false;
-
-  const { document } = new JSDOM().window;
+  const jsdom = createJSDOM();
+  const { document } = jsdom.window;
   globalThis.document = document;
-
-  vm.isContext = isContext;
+  setUpClipboard();
 }

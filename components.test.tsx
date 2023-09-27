@@ -1,4 +1,10 @@
-import { cleanup, fireEvent, render, setup } from "$fresh-testing-library";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  setup,
+  waitFor,
+} from "$fresh-testing-library";
 import { computed, signal, useSignal } from "@preact/signals";
 import { assertEquals } from "$std/assert/assert_equals.ts";
 import { assertExists } from "$std/assert/assert_exists.ts";
@@ -26,14 +32,9 @@ describe("$fresh-testing-library/components", () => {
     assertExists(screen.getByText("9"));
     assertFalse(screen.queryByText("10"));
   });
-});
 
-describe("Changing the `src` of the `img` element", () => {
-  // Regression test for https://github.com/uki00a/fresh-testing-library/issues/22
-  beforeAll(setup);
-  afterEach(cleanup);
-
-  it("should work", async () => {
+  it("supports changing the `src` of the `img` element", async () => {
+    // Regression test for https://github.com/uki00a/fresh-testing-library/issues/22
     const images = [
       "https://avatars.githubusercontent.com/u/35212662?v=4",
       "https://avatars.githubusercontent.com/u/42048915?v=4",
@@ -60,5 +61,24 @@ describe("Changing the `src` of the `img` element", () => {
     assertEquals(img.getAttribute("src"), images[0]);
     await fireEvent.click(button);
     assertEquals(img.getAttribute("src"), images[1]);
+  });
+
+  it("supports Clipboard API", async () => {
+    // Regression test for https://github.com/uki00a/fresh-testing-library/issues/29
+    function Test({ text }: { text: string }) {
+      const onClick = () => {
+        navigator.clipboard.writeText(text);
+      };
+
+      return <button type="button" onClick={onClick}>COPY</button>;
+    }
+
+    const text = "It works.";
+    const screen = render(<Test text={text} />);
+    const button = screen.getByRole("button", { name: "COPY" });
+    await fireEvent.click(button);
+    await waitFor(async () => {
+      assertEquals(await navigator.clipboard.readText(), text);
+    });
   });
 });
