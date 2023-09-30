@@ -1,4 +1,3 @@
-import { cleanup as _cleanup } from "./deps/preact-testing-library.ts";
 import { JSDOM } from "./deps/jsdom.ts";
 import { setUpClipboard } from "./deps/jest-clipboard.ts";
 
