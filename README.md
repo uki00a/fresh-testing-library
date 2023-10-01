@@ -39,7 +39,7 @@ import {
   fireEvent,
   render,
   setup,
-} from "$fresh-testing-library/component.ts";
+} from "$fresh-testing-library/components.ts";
 import { signal } from "@preact/signals";
 import { assertEquals } from "$std/assert/assert_equals.ts";
 import { assertExists } from "$std/assert/assert_exists.ts";
