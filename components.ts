@@ -1,3 +1,10 @@
+/**
+ * A thin wrapper to
+ * [@testing-library/preact]{@link https://github.com/testing-library/preact-testing-library}
+ * for testing island components.
+ *
+ * @module
+ */
 import { JSDOM } from "./deps/jsdom.ts";
 import { setUpClipboard } from "./deps/jest-clipboard.ts";
 

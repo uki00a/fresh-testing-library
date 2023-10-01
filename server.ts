@@ -1,3 +1,9 @@
+/**
+ * Utilities for testing handlers, middlewares, routes, etc.
+ *
+ * @module
+ */
+
 import type {
   HandlerContext,
   Manifest,
