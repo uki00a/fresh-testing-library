@@ -1,8 +1,7 @@
 # fresh-testing-library
 
-A thin wrapper to
-[@testing-library/preact](https://github.com/testing-library/preact-testing-library)
-for testing a [fresh](https://github.com/denoland/fresh) application.
+`fresh-testing-library` provides various utilitites to write unit/integration
+tests for fresh apps.
 
 ## Installation
 
@@ -35,7 +34,12 @@ See [docs/permissions](docs/permissions.md) for details.
 ### Testing island components
 
 ```tsx
-import { cleanup, fireEvent, render, setup } from "$fresh-testing-library";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  setup,
+} from "$fresh-testing-library/components.ts";
 import { signal } from "@preact/signals";
 import { assertEquals } from "$std/assert/assert_equals.ts";
 import { assertExists } from "$std/assert/assert_exists.ts";
@@ -71,7 +75,7 @@ describe("islands/Counter.tsx", () => {
 You can test fresh middlewares using `createMiddlewareHandlerContext` API:
 
 ```ts
-import { createMiddlewareHandlerContext } from "$fresh-testing-library";
+import { createMiddlewareHandlerContext } from "$fresh-testing-library/server.ts";
 import { assert } from "$std/assert/assert.ts";
 import { assertEquals } from "$std/assert/assert_equals.ts";
 import { describe, it } from "$std/testing/bdd.ts";
@@ -105,7 +109,7 @@ describe("createLoggerMiddleware", () => {
 You can test fresh handlers using `createHandlerContext` API:
 
 ```ts
-import { createHandlerContext } from "$fresh-testing-library";
+import { createHandlerContext } from "$fresh-testing-library/server.ts";
 
 import { assert } from "$std/assert/assert.ts";
 import { assertEquals } from "$std/assert/assert_equals.ts";
