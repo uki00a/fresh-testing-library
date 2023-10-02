@@ -9,40 +9,46 @@ import type {
 } from "$fresh/server.ts";
 
 const routeExtnames = [".tsx", ".jsx", ".mts", ".ts", ".js", ".mjs"];
-const kFreshPathPrefix = "./routes" as const;
+const kFreshRoutePathPrefix = "./routes" as const;
 const kIndexRoute = "index" as const;
 
-type FreshPath = `${typeof kFreshPathPrefix}/${string}`;
+type FreshRoutePath = `${typeof kFreshRoutePathPrefix}/${string}`;
 
 /**
  * {@link https://developer.mozilla.org/en-US/docs/Web/API/URL_Pattern_API}
  */
-export function freshPathToURLPattern(path: FreshPath): URLPattern {
+export function freshRoutePathToURLPattern(path: FreshRoutePath): URLPattern {
   return new URLPattern({
-    pathname: freshPathToPathToRegexPattern(path),
+    pathname: freshRoutePathToPathToRegexPattern(path),
   });
 }
 
-function freshPathToPathToRegexPattern(path: FreshPath): string {
+function freshRoutePathToPathToRegexPattern(path: FreshRoutePath): string {
   const parts = removeExtname(
-    removePrefix(path, kFreshPathPrefix),
+    removePrefix(path, kFreshRoutePathPrefix),
     routeExtnames,
   ).split("/");
-  const pattern = parts.map(
-    (part, i) => {
+  const pattern = parts.reduce(
+    (normalizedParts: Array<string>, part, i) => {
       if (part.startsWith("[...") && part.endsWith("]")) {
         const name = part.slice(4, -1);
-        return `:${name}+`;
+        normalizedParts.push(`:${name}+`);
       } else if (part.startsWith("[") && part.endsWith("]")) {
         const name = part.slice(1, -1);
-        return `:${name}`;
+        normalizedParts.push(`:${name}`);
+      } else if (part.startsWith("(") && part.endsWith(")")) {
+        // NOTE: a route group is ignored.
       } else if (i + 1 === parts.length && part === kIndexRoute) {
-        // `./routes/path/to/index.tsx`
-        return "";
+        /**
+         * @example `./routes/path/to/index.tsx`
+         */
+        normalizedParts.push("");
       } else {
-        return part;
+        normalizedParts.push(part);
       }
+      return normalizedParts;
     },
+    [],
   ).join("/");
   return (pattern.endsWith("/") && path.endsWith("/")) || pattern === "/"
     ? pattern
@@ -91,9 +97,9 @@ function findMatchingRouteAndPathPatternFromManifest(
   manifest: Manifest,
 ): MatchingRouteAndPathPattern | null {
   const url = new URL(request.url);
-  for (const freshPath of extractFreshPaths(manifest)) {
+  for (const freshPath of extractFreshRoutePaths(manifest)) {
     const module = manifest.routes[freshPath];
-    let pathToRegexpPattern = freshPathToPathToRegexPattern(freshPath);
+    let pathToRegexpPattern = freshRoutePathToPathToRegexPattern(freshPath);
     if ("config" in module && (module.config as RouteConfig).routeOverride) {
       pathToRegexpPattern = String(
         (module.config as RouteConfig).routeOverride,
@@ -170,8 +176,8 @@ export function determineRouteDestinationKind(
     return kDesitinationKindNotFound;
   }
 
-  for (const freshPath of extractFreshPaths(manifest)) {
-    const pattern = freshPathToURLPattern(freshPath);
+  for (const freshPath of extractFreshRoutePaths(manifest)) {
+    const pattern = freshRoutePathToURLPattern(freshPath);
     if (pattern.test({ pathname: path })) {
       return kDesitinationKindRoute;
     }
@@ -180,15 +186,15 @@ export function determineRouteDestinationKind(
   return kDesitinationKindNotFound;
 }
 
-function extractFreshPaths(manifest: Manifest): Array<FreshPath> {
-  return Object.keys(manifest.routes) as Array<FreshPath>;
+function extractFreshRoutePaths(manifest: Manifest): Array<FreshRoutePath> {
+  return Object.keys(manifest.routes) as Array<FreshRoutePath>;
 }
 
 export function extractParams(request: Request, manifest: Manifest) {
   const url = new URL(request.url);
-  const params = extractFreshPaths(manifest).reduce(
+  const params = extractFreshRoutePaths(manifest).reduce(
     (params: Record<string, string>, path) => {
-      const pattern = freshPathToURLPattern(path);
+      const pattern = freshRoutePathToURLPattern(path);
       const match = pattern.exec(url.href);
       if (match) {
         const { groups } = match.pathname;
