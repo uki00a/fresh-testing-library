@@ -33,6 +33,10 @@ See [docs/permissions](docs/permissions.md) for details.
 
 ### Testing island components
 
+`$fresh-testing-library/components.ts` is a thin wrapper to
+[@testing-library/preact](https://github.com/testing-library/preact-testing-library).
+You can use this module to test island components.
+
 ```tsx
 import {
   cleanup,
