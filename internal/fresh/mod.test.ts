@@ -7,13 +7,13 @@ import {
   determineRoute,
   determineRouteDestinationKind,
   findMatchingRouteFromManifest,
-  freshPathToURLPattern,
+  freshRoutePathToURLPattern,
 } from "./mod.ts";
 
 describe("$fresh-testing-library/_util", () => {
-  describe("freshPathToURLPattern", () => {
+  describe("freshRoutePathToURLPattern", () => {
     it("is properly typed", () => {
-      type Args = Parameters<typeof freshPathToURLPattern>;
+      type Args = Parameters<typeof freshRoutePathToURLPattern>;
       assertType<Has<["./routes/index.tsx"], Args>>(true);
       assertType<Has<["./routes/users/[id].tsx"], Args>>(true);
       assertType<Has<["/api/users/123"], Args>>(false);
@@ -36,13 +36,17 @@ describe("$fresh-testing-library/_util", () => {
           ["./routes/files/[...path]", "/files/:path+"],
           ["./routes/files/[...path].tsx", "/files/:path+"],
           ["./routes/files/[...path]/view.tsx", "/files/:path+/view"],
+
+          // Route groups
+          ["./routes/(admin)/dashboard.tsx", "/dashboard"],
+          ["./routes/(admin)/(users)/account.tsx", "/account"],
         ]
       ) {
         await t.step(
-          `freshPathToURLPattern("${given}") returns "${expected}"`,
+          `returns \`"${expected}"\` when \`"${given}"\` is given`,
           () => {
             // @ts-expect-error This is intended
-            const actual = freshPathToURLPattern(given);
+            const actual = freshRoutePathToURLPattern(given);
             assertEquals(actual.pathname, expected);
           },
         );
@@ -69,6 +73,9 @@ describe("$fresh-testing-library/_util", () => {
         ["/_frsh/refresh.js", "internal"],
         ["/api/users/1234", "route"],
         ["/api/users/1234/foo", "notFound"],
+
+        // This function supports route groups
+        ["/dashboard", "route"],
       ]
     ) {
       it(`should return "${expected}" for "${given}"`, async () => {
