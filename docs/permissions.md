@@ -7,7 +7,7 @@ This module does not require any permissions.
 | Permission | Value | Description |
 | :--------: | :---: | :---------: |
 
-## `$fresh-testing-library/component.ts`
+## `$fresh-testing-library/components.ts`
 
 |   Permission   | Value |                                 Description                                  |
 | :------------: | :---: | :--------------------------------------------------------------------------: |
