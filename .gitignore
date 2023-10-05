@@ -6,3 +6,4 @@
 .env.local
 
 .vscode
+.doctest.ts
