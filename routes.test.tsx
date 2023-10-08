@@ -35,7 +35,10 @@ describe("routes testing", () => {
     const request = new Request("http://localhost:8000/dashboard");
     const ctx = createHandlerContext(
       request,
-      { manifest },
+      {
+        state: { activeUsers: 45, totalUsers: 123 },
+        manifest,
+      },
     );
     assert(handler.GET);
     const res = await handler.GET(request, ctx);

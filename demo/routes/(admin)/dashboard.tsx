@@ -6,11 +6,11 @@ interface Data {
   activeUsers: number;
 }
 
-export const handler: Handlers<Data> = {
+export const handler: Handlers<Data, Data> = {
   GET(_, ctx) {
     return ctx.render({
-      totalUsers: 123,
-      activeUsers: 45,
+      totalUsers: ctx.state.totalUsers ?? 1,
+      activeUsers: ctx.state.activeUsers ?? 0,
     });
   },
 };
