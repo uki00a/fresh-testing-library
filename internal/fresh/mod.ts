@@ -1,9 +1,11 @@
 import { extname } from "node:path";
+import type { VNode } from "preact";
 import { h } from "preact";
 import { render } from "preact-render-to-string";
 import type {
   Manifest,
   MiddlewareHandler,
+  PageProps,
   RouteConfig,
   RouteContext,
 } from "$fresh/server.ts";
@@ -55,21 +57,6 @@ function freshRoutePathToPathToRegexPattern(path: FreshRoutePath): string {
     : removeSuffix(pattern, "/");
 }
 
-export function findMatchingRouteFromManifest(
-  request: Request,
-  manifest: Manifest,
-): Manifest["routes"][string] | null {
-  const maybeRouteAndPattern = findMatchingRouteAndPathPatternFromManifest(
-    request,
-    manifest,
-  );
-  if (maybeRouteAndPattern == null) {
-    return null;
-  }
-  const [route] = maybeRouteAndPattern;
-  return route;
-}
-
 export function determineRoute(
   request: Request,
   manifest?: Manifest,
@@ -92,7 +79,7 @@ export function determineRoute(
 
 type MatchingRouteAndPathPattern = [Manifest["routes"][string], string];
 
-function findMatchingRouteAndPathPatternFromManifest(
+export function findMatchingRouteAndPathPatternFromManifest(
   request: Request,
   manifest: Manifest,
 ): MatchingRouteAndPathPattern | null {
@@ -124,8 +111,43 @@ export function isRouteModule(
     .default != null;
 }
 
-export async function renderRouteComponent(
-  routeComponent: Required<RouteModule>["default"],
+type AsyncRouteComponent = Required<RouteModule>["default"];
+interface SyncRouteComponent {
+  (props: PageProps): VNode;
+}
+
+export function isSyncRouteComponent(
+  component: AsyncRouteComponent | SyncRouteComponent,
+): component is SyncRouteComponent {
+  return component.length === 1;
+}
+
+const kContainerElement = "div";
+export function renderSyncRouteComponent(
+  routeComponent: SyncRouteComponent,
+  request: Request,
+  routePattern: string,
+  params: PageProps["params"],
+  data: PageProps["data"],
+  state: PageProps["state"],
+) {
+  const pageProps: PageProps = {
+    url: new URL(request.url),
+    route: routePattern,
+    params,
+    data,
+    state,
+  };
+  const html = render(h(kContainerElement, {}, h(routeComponent, pageProps)));
+  return new Response(html, {
+    headers: {
+      "Content-Type": "text/html; charset=UTF-8",
+    },
+  });
+}
+
+export async function renderAsyncRouteComponent(
+  routeComponent: AsyncRouteComponent,
   request: Request,
   ctx: RouteContext,
 ): Promise<Response> {
@@ -136,7 +158,7 @@ export async function renderRouteComponent(
   if (result instanceof Response) {
     return result;
   }
-  const html = render(h("div", {}, result));
+  const html = render(h(kContainerElement, {}, result));
   return new Response(html, {
     headers: {
       "Content-Type": "text/html; charset=UTF-8",

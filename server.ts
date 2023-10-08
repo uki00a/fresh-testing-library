@@ -14,9 +14,11 @@ import {
   determineRoute,
   determineRouteDestinationKind,
   extractParams,
-  findMatchingRouteFromManifest,
+  findMatchingRouteAndPathPatternFromManifest,
   isRouteModule,
-  renderRouteComponent,
+  isSyncRouteComponent,
+  renderAsyncRouteComponent,
+  renderSyncRouteComponent,
 } from "./internal/fresh/mod.ts";
 
 interface CreateHandlerContextOptions<
@@ -94,14 +96,15 @@ export function createHandlerContext<
   const request: Request = requestOrOptions;
   const url = new URL(request.url);
   const {
-    params,
+    manifest,
+    params: _params,
     state = {} as TState,
     response,
     responseNotFound = createNotFoundResponse(),
     localAddr = createDefaultLocalAddr(url),
     remoteAddr = createDefaultRemoteAddr(url),
-    manifest,
   } = options ?? {};
+  const params = _params ?? (manifest ? extractParams(request, manifest) : {});
 
   function createRender() {
     if (response instanceof Response) {
@@ -109,19 +112,34 @@ export function createHandlerContext<
     }
 
     if (manifest) {
-      return async () => {
-        const route = await findMatchingRouteFromManifest(request, manifest);
-        if (route && isRouteModule(route)) {
+      return async (data: TData | undefined) => {
+        const maybeRouteAndPathPattern =
+          await findMatchingRouteAndPathPatternFromManifest(request, manifest);
+        if (
+          maybeRouteAndPathPattern && isRouteModule(maybeRouteAndPathPattern[0])
+        ) {
+          const [route, pattern] = maybeRouteAndPathPattern;
           const routeComponent = route.default;
           if (routeComponent == null) {
             return createDefaultResponse();
           }
 
-          return renderRouteComponent(
-            routeComponent,
-            request,
-            createRouteContext(request, { manifest }),
-          );
+          if (isSyncRouteComponent(routeComponent)) {
+            return renderSyncRouteComponent(
+              routeComponent,
+              request,
+              pattern,
+              params,
+              data,
+              state,
+            );
+          } else {
+            return renderAsyncRouteComponent(
+              routeComponent,
+              request,
+              createRouteContext(request, { data, manifest }),
+            );
+          }
         }
 
         return createDefaultResponse();

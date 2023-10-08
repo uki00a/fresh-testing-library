@@ -1,7 +1,21 @@
 import { Head } from "$fresh/runtime.ts";
-import type { PageProps } from "$fresh/server.ts";
+import type { Handlers, PageProps } from "$fresh/server.ts";
 
-export default function AdminDashboard(props: PageProps) {
+interface Data {
+  totalUsers: number;
+  activeUsers: number;
+}
+
+export const handler: Handlers<Data, Data> = {
+  GET(_, ctx) {
+    return ctx.render({
+      totalUsers: ctx.state.totalUsers ?? 1,
+      activeUsers: ctx.state.activeUsers ?? 0,
+    });
+  },
+};
+
+export default function AdminDashboard(props: PageProps<Data>) {
   return (
     <>
       <Head>
@@ -11,9 +25,9 @@ export default function AdminDashboard(props: PageProps) {
       <main>
         <dl>
           <dt>Total users</dt>
-          <dd>123</dd>
+          <dd>{props.data.totalUsers}</dd>
           <dt>Active users</dt>
-          <dd>45</dd>
+          <dd>{props.data.activeUsers}</dd>
         </dl>
       </main>
     </>
