@@ -1,4 +1,5 @@
 import { assertEquals } from "$std/assert/assert_equals.ts";
+import { assertExists } from "$std/assert/assert_exists.ts";
 import { describe, it } from "$std/testing/bdd.ts";
 import type { Has } from "$std/testing/types.ts";
 import { assertType } from "$std/testing/types.ts";
@@ -6,7 +7,7 @@ import { assertType } from "$std/testing/types.ts";
 import {
   determineRoute,
   determineRouteDestinationKind,
-  findMatchingRouteFromManifest,
+  findMatchingRouteAndPathPatternFromManifest,
   freshRoutePathToURLPattern,
 } from "./mod.ts";
 
@@ -85,19 +86,29 @@ describe("$fresh-testing-library/_util", () => {
     }
   });
 
-  describe("findMatchingRouteFromManifest", () => {
-    it(`should return the maching route`, async () => {
+  describe("findMatchingRouteAndPathPatternFromManifest", () => {
+    it(`should return the maching route and path pattern`, async () => {
       const request = new Request("http://localhost:9876/users/9876");
       const manifest = await loadManifest();
-      const route = findMatchingRouteFromManifest(request, manifest);
+      const result = findMatchingRouteAndPathPatternFromManifest(
+        request,
+        manifest,
+      );
+      assertExists(result);
+
+      const [route, pattern] = result;
       assertEquals(route, manifest.routes["./routes/users/[id].tsx"]);
+      assertEquals(pattern, "/users/:id");
     });
 
     it(`should return \`null\` when no route matches`, async () => {
       const request = new Request("http://localhost:9876/users/9876/foo");
       const manifest = await loadManifest();
-      const route = findMatchingRouteFromManifest(request, manifest);
-      assertEquals(route, null);
+      const result = findMatchingRouteAndPathPatternFromManifest(
+        request,
+        manifest,
+      );
+      assertEquals(result, null);
     });
   });
 });
