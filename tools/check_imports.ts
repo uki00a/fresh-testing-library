@@ -1,6 +1,11 @@
 import { Project } from "../deps/ts_morph.ts";
 import { walk } from "$std/fs/walk.ts";
-import { isAbsolute } from "node:path";
+import { dirname, isAbsolute, join } from "node:path";
+
+/**
+ * NOTE: `internal/test_utils/*.ts` should not be imported from modules.
+ */
+const internalTestUtilsModRe = /internal\/test_utils\//;
 
 async function checkImports(): Promise<void> {
   const project = new Project({ useInMemoryFileSystem: true });
@@ -14,6 +19,8 @@ async function checkImports(): Promise<void> {
         /\/testdata\//,
         /\/tools\//,
         /\.test.ts(x)?$/,
+        /.doctest.ts$/,
+        internalTestUtilsModRe,
       ],
       exts: [".tsx", ".ts"],
     })
@@ -23,16 +30,19 @@ async function checkImports(): Promise<void> {
     const sourceFile = project.createSourceFile(entry.path, text);
     try {
       const imports = sourceFile.getImportDeclarations();
+      const referrer = sourceFile.getFilePath();
       for (const x of imports) {
         const specifier = x.getModuleSpecifierValue();
-        if (isAllowedSpecifier(specifier)) continue;
+        if (isAllowedSpecifier(specifier, referrer)) continue;
         throw new Error(`${basename}: '${specifier}' is not allowed.`);
       }
 
       const exports = sourceFile.getExportDeclarations();
       for (const x of exports) {
         const specifier = x.getModuleSpecifierValue();
-        if (specifier == null || isAllowedSpecifier(specifier)) continue;
+        if (specifier == null || isAllowedSpecifier(specifier, referrer)) {
+          continue;
+        }
         throw new Error(`${basename}: '${specifier}' is not allowed.`);
       }
     } finally {
@@ -41,7 +51,7 @@ async function checkImports(): Promise<void> {
   }
 }
 
-function isAllowedSpecifier(specifier: string): boolean {
+function isAllowedSpecifier(specifier: string, referrer: string): boolean {
   if (
     specifier.startsWith("npm:") || specifier.startsWith("node:") ||
     URL.canParse(specifier)
@@ -49,7 +59,15 @@ function isAllowedSpecifier(specifier: string): boolean {
     return true;
   }
 
-  if (isAbsolute(specifier) || isRelative(specifier)) {
+  if (isAbsolute(specifier)) {
+    return true;
+  }
+
+  if (isRelative(specifier)) {
+    const normalized = join(dirname(referrer), specifier);
+    if (internalTestUtilsModRe.test(normalized)) {
+      return false;
+    }
     return true;
   }
 

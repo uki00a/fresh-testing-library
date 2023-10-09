@@ -1,8 +1,3 @@
-import type {
-  HandlerContext,
-  MiddlewareHandlerContext,
-  RouteContext,
-} from "$fresh/server.ts";
 import {
   createHandlerContext,
   createMiddlewareHandlerContext,
@@ -16,9 +11,12 @@ import { assertEquals } from "$std/assert/assert_equals.ts";
 import { describe, it } from "$std/testing/bdd.ts";
 
 import { cheerio } from "./deps/cheerio.ts";
-
-const defaultDummyLocalPort = 8020;
-const defaultDummyRemotePort = 49152;
+import {
+  assertContextHasDefaultServerInfo,
+  assertContextHasServerInfoForRequest,
+  assertDefaultResponseAsync,
+  loadManifest,
+} from "./internal/test_utils/mod.ts";
 
 describe("$fresh-testing-library/server", () => {
   describe("createHandlerContext", () => {
@@ -432,40 +430,3 @@ describe("$fresh-testing-library/server", () => {
     });
   });
 });
-
-async function loadManifest() {
-  const { default: manifest } = await import("./demo/fresh.gen.ts");
-  return manifest;
-}
-
-function assertContextHasDefaultServerInfo(
-  ctx: HandlerContext | MiddlewareHandlerContext | RouteContext,
-) {
-  assert(ctx.localAddr);
-  assert(ctx.localAddr.transport === "tcp");
-  assertEquals(ctx.localAddr.hostname, "localhost");
-  assertEquals(ctx.localAddr.port, defaultDummyLocalPort);
-  assert(ctx.remoteAddr.transport === "tcp");
-  assertEquals(ctx.remoteAddr.hostname, "localhost");
-  assertEquals(ctx.remoteAddr.port, defaultDummyRemotePort);
-}
-
-function assertContextHasServerInfoForRequest(
-  ctx: HandlerContext | MiddlewareHandlerContext | RouteContext,
-  req: Request,
-) {
-  const url = new URL(req.url);
-  const port = Number.parseInt(url.port);
-  assert(ctx.localAddr);
-  assert(ctx.localAddr.transport === "tcp");
-  assertEquals(ctx.localAddr.hostname, url.hostname);
-  assertEquals(ctx.localAddr.port, port);
-  assert(ctx.remoteAddr.transport === "tcp");
-  assertEquals(ctx.remoteAddr.hostname, url.hostname);
-  assertEquals(ctx.remoteAddr.port, defaultDummyRemotePort);
-}
-
-async function assertDefaultResponseAsync(res: Response) {
-  assertEquals(res.status, 200);
-  assertEquals(await res.text(), "OK");
-}

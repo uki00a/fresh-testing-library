@@ -10,6 +10,7 @@ import {
   findMatchingRouteAndPathPatternFromManifest,
   freshRoutePathToURLPattern,
 } from "./mod.ts";
+import { loadManifest } from "../test_utils/mod.ts";
 
 describe("$fresh-testing-library/_util", () => {
   describe("freshRoutePathToURLPattern", () => {
@@ -112,8 +113,3 @@ describe("$fresh-testing-library/_util", () => {
     });
   });
 });
-
-async function loadManifest() {
-  const { default: manifest } = await import("../../demo/fresh.gen.ts");
-  return manifest;
-}
