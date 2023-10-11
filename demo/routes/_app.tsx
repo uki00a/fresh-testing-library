@@ -9,7 +9,9 @@ export default function App({ Component }: AppProps) {
         <title>fresh-testing-library</title>
       </head>
       <body>
-        <Component />
+        <main class="p-4 mx-auto max-w-screen-md">
+          <Component />
+        </main>
       </body>
     </html>
   );
