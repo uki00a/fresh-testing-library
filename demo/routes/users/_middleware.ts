@@ -1,5 +1,5 @@
 import type { MiddlewareHandler } from "$fresh/server.ts";
-import type { Users } from "🔧/users.ts";
+import type { Users } from "⚫/user.ts";
 import { createInMemoryUsers } from "🔧/users.ts";
 
 export interface State {
