@@ -1,5 +1,5 @@
 import { extname } from "node:path";
-import type { VNode } from "preact";
+import type { ClassAttributes, VNode } from "preact";
 import { h } from "preact";
 import { render } from "preact-render-to-string";
 import type {
@@ -138,7 +138,12 @@ export function renderSyncRouteComponent(
     data,
     state,
   };
-  const html = render(h(kContainerElement, {}, h(routeComponent, pageProps)));
+
+  // NOTE: It seems that there is a mismatch between the type definitions of `preact` and `preact-render-to-string`.
+  const vnode = h(kContainerElement, {}, h(routeComponent, pageProps)) as VNode<
+    ClassAttributes<HTMLElement>
+  >; // TODO: remove this type casting.
+  const html = render(vnode);
   return new Response(html, {
     headers: {
       "Content-Type": "text/html; charset=UTF-8",
@@ -158,7 +163,12 @@ export async function renderAsyncRouteComponent(
   if (result instanceof Response) {
     return result;
   }
-  const html = render(h(kContainerElement, {}, result));
+
+  // NOTE: It seems that there is a mismatch between the type definitions of `preact` and `preact-render-to-string`.
+  const vnode = h(kContainerElement, {}, result) as VNode<
+    ClassAttributes<HTMLElement>
+  >; // TODO: remove this type casting.
+  const html = render(vnode);
   return new Response(html, {
     headers: {
       "Content-Type": "text/html; charset=UTF-8",
