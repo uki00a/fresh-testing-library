@@ -34,15 +34,17 @@ See [docs/permissions](docs/permissions.md) for details.
 ### Testing island components
 
 `$fresh-testing-library/components.ts` is a thin wrapper to
-[@testing-library/preact](https://github.com/testing-library/preact-testing-library).
-You can use this module to test island components.
+[@testing-library/preact](https://github.com/testing-library/preact-testing-library)
+and
+[@testing-library/user-event](https://github.com/testing-library/user-event).
+This module can be used to test island components.
 
 ```tsx
 import {
   cleanup,
-  fireEvent,
   render,
   setup,
+  userEvent,
 } from "$fresh-testing-library/components.ts";
 import { signal } from "@preact/signals";
 import { assertEquals } from "$std/assert/assert_equals.ts";
@@ -58,16 +60,17 @@ describe("islands/Counter.tsx", () => {
 
   it("should work", async () => {
     const count = signal(9);
+    const user = userEvent.setup();
     const screen = render(<Counter count={count} />);
     const plusOne = screen.getByRole("button", { name: "+1" });
     const minusOne = screen.getByRole("button", { name: "-1" });
     assertExists(screen.getByText("9"));
 
-    await fireEvent.click(plusOne);
+    await user.click(plusOne);
     assertFalse(screen.queryByText("9"));
     assertExists(screen.getByText("10"));
 
-    await fireEvent.click(minusOne);
+    await user.click(minusOne);
     assertExists(screen.getByText("9"));
     assertFalse(screen.queryByText("10"));
   });
@@ -185,8 +188,8 @@ import { createHandlerContext } from "$fresh-testing-library/server.ts";
 
 import {
   cleanup,
-  fireEvent,
   render,
   setup,
+  userEvent,
 } from "$fresh-testing-library/components.ts";
 ```

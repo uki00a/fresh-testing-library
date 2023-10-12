@@ -1,8 +1,8 @@
 import {
   cleanup,
-  fireEvent,
   render,
   setup,
+  userEvent,
   waitFor,
 } from "$fresh-testing-library";
 import { computed, signal, useSignal } from "@preact/signals";
@@ -17,18 +17,19 @@ describe("$fresh-testing-library/components", () => {
   beforeAll(setup);
   afterEach(cleanup);
 
-  it("provides a thin wrapper to `@testing-library/preact`", async () => {
+  it("provides a thin wrapper to `@testing-library/preact` and `@testing-library/user-event`", async () => {
     const count = signal(9);
+    const user = userEvent.setup();
     const screen = render(<Counter count={count} />);
     const plusOne = screen.getByRole("button", { name: "+1" });
     const minusOne = screen.getByRole("button", { name: "-1" });
     assertExists(screen.getByText("9"));
 
-    await fireEvent.click(plusOne);
+    await user.click(plusOne);
     assertFalse(screen.queryByText("9"));
     assertExists(screen.getByText("10"));
 
-    await fireEvent.click(minusOne);
+    await user.click(minusOne);
     assertExists(screen.getByText("9"));
     assertFalse(screen.queryByText("10"));
   });
@@ -54,12 +55,13 @@ describe("$fresh-testing-library/components", () => {
       );
     }
 
+    const user = userEvent.setup();
     const screen = render(<Test />);
     const img = screen.getByRole("img");
     const button = screen.getByRole("button", { name: "➡️" });
 
     assertEquals(img.getAttribute("src"), images[0]);
-    await fireEvent.click(button);
+    await user.click(button);
     assertEquals(img.getAttribute("src"), images[1]);
   });
 
@@ -74,9 +76,10 @@ describe("$fresh-testing-library/components", () => {
     }
 
     const text = "It works.";
+    const user = userEvent.setup();
     const screen = render(<Test text={text} />);
     const button = screen.getByRole("button", { name: "COPY" });
-    await fireEvent.click(button);
+    await user.click(button);
     await waitFor(async () => {
       assertEquals(await navigator.clipboard.readText(), text);
     });
