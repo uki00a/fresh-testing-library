@@ -5,6 +5,7 @@ import {
 } from "$fresh-testing-library/server.ts";
 import { handler } from "🗺/api/users/[id].ts";
 import { createLoggerMiddleware } from "🗺/(_middlewares)/logger.ts";
+import { createInMemoryUsers } from "🔧/users.ts";
 
 import { assert } from "$std/assert/assert.ts";
 import { assertEquals } from "$std/assert/assert_equals.ts";
@@ -157,16 +158,19 @@ describe("$fresh-testing-library/server", () => {
     it("can render a page component from `Request` based on `manifest` option", async () => {
       const manifest = await loadManifest();
       const req = new Request("http://localhost:8003/users/1");
-      const ctx = createHandlerContext(req, { manifest });
+      const state = { users: createInMemoryUsers() };
+      const ctx = createHandlerContext(req, { manifest, state });
       const res = await ctx.render();
       assertEquals(res.status, 200);
       assertEquals(res.headers.get("Content-Type"), "text/html; charset=UTF-8");
 
       const $ = cheerio.load(await res.text());
       const $dd = $("dd");
-      assertEquals($dd.length, 2);
+      const expected = await state.users.getByID(1);
+      assertEquals($dd.length, 3);
       assertEquals($dd.eq(0).text(), "1");
-      assertEquals($dd.eq(1).text(), "foo");
+      assertEquals($dd.eq(1).text(), expected.name);
+      assertEquals($dd.eq(2).text(), expected.email);
     });
   });
 

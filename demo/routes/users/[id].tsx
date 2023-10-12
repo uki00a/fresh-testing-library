@@ -1,22 +1,25 @@
 import { defineRoute } from "$fresh/server.ts";
+import type { State } from "./_middleware.ts";
 
-const users: Record<string, string> = {
-  1: "foo",
-  2: "bar",
-};
-
-export default defineRoute((_, ctx) => {
-  const maybeUser = users[ctx.params.id];
-  if (maybeUser == null) {
-    return ctx.renderNotFound();
-  }
-
+export default defineRoute<State>(async (_, ctx) => {
+  console.info(ctx);
+  const id = Number.parseInt(ctx.params.id);
+  const user = await ctx.state.users.getByID(id);
   return (
-    <dl role="group">
-      <dt>ID</dt>
-      <dd>{ctx.params.id}</dd>
-      <dt>Name</dt>
-      <dd>{maybeUser}</dd>
-    </dl>
+    <>
+      <dl role="group" class="shadow-md p-4">
+        <dt class="font-bold">ID:</dt>
+        <dd>{id}</dd>
+        <dt class="font-bold">Name:</dt>
+        <dd>{user.name}</dd>
+        <dt class="font-bold">Email:</dt>
+        <dd>{user.email}</dd>
+      </dl>
+      <div f-client-nav>
+        <a href="/users">
+          <i>⬅</i>️Back to Top
+        </a>
+      </div>
+    </>
   );
 });

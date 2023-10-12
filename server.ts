@@ -137,7 +137,7 @@ export function createHandlerContext<
             return renderAsyncRouteComponent(
               routeComponent,
               request,
-              createRouteContext(request, { data, manifest }),
+              createRouteContext(request, { data, manifest, state }),
             );
           }
         }

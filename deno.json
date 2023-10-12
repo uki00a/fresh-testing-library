@@ -23,6 +23,8 @@
     "$std/": "https://deno.land/std@0.195.0/",
     "🏝️/": "./demo/islands/",
     "🗺/": "./demo/routes/",
+    "⚫/": "./demo/core/",
+    "🔧/": "./demo/services/",
     "$fresh-testing-library": "./mod.ts",
     "$fresh-testing-library/": "./"
   },

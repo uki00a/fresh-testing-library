@@ -154,6 +154,7 @@ import { assertExists } from "$std/assert/assert_exists.ts";
 import { afterEach, beforeAll, describe, it } from "$std/testing/bdd.ts";
 import { default as UserDetail } from "./demo/routes/users/[id].tsx";
 import { default as manifest } from "./demo/fresh.gen.ts";
+import { createInMemoryUsers } from "./demo/services/users.ts";
 
 describe("routes/users/[id].tsx", () => {
   beforeAll(setup);
@@ -161,7 +162,12 @@ describe("routes/users/[id].tsx", () => {
 
   it("should work", async () => {
     const req = new Request("http://localhost:8000/users/2");
-    const ctx = createRouteContext<void>(req, { manifest });
+    const state = { users: createInMemoryUsers() };
+    const ctx = createRouteContext<void, typeof state>(req, {
+      manifest,
+      // It is possible to inject dependencies into `ctx.state` with `state` option.
+      state,
+    });
     const screen = render(await UserDetail(req, ctx));
     const group = screen.getByRole("group");
     assertExists(getByText(group, "bar"));

@@ -16,6 +16,7 @@ import { cheerio } from "./deps/cheerio.ts";
 import { default as UserDetail } from "./demo/routes/users/[id].tsx";
 import { default as manifest } from "./demo/fresh.gen.ts";
 import { handler } from "./demo/routes/(admin)/dashboard.tsx";
+import { createInMemoryUsers } from "./demo/services/users.ts";
 
 describe("routes testing", () => {
   beforeAll(setup);
@@ -23,7 +24,11 @@ describe("routes testing", () => {
 
   it("supports testing an async route component", async () => {
     const req = new Request("http://localhost:8000/users/2");
-    const ctx = createRouteContext<void>(req, { manifest });
+    const state = { users: createInMemoryUsers() };
+    const ctx = createRouteContext<void, typeof state>(req, {
+      manifest,
+      state,
+    });
     const screen = render(await UserDetail(req, ctx));
     const list = screen.getByRole("group");
     assertExists(getByText(list, "2"));
