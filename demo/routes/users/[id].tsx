@@ -2,7 +2,6 @@ import { defineRoute } from "$fresh/server.ts";
 import type { State } from "./_middleware.ts";
 
 export default defineRoute<State>(async (_, ctx) => {
-  console.info(ctx);
   const id = Number.parseInt(ctx.params.id);
   const user = await ctx.state.users.getByID(id);
   return (
