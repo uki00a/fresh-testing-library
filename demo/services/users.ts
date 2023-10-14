@@ -2,9 +2,9 @@ import type { User, Users } from "⚫/user.ts";
 
 export function createInMemoryUsers(): Users {
   const users: Record<string, User> = {
-    1: { name: "foo", email: "foo@example.com" },
-    2: { name: "bar", email: "bar@example.com" },
-    3: { name: "baz", email: "baz@example.com" },
+    1: { id: 1, name: "foo", email: "foo@example.com" },
+    2: { id: 2, name: "bar", email: "bar@example.com" },
+    3: { id: 3, name: "baz", email: "baz@example.com" },
   };
 
   function all() {
