@@ -16,11 +16,11 @@ export const handler: Handlers<unknown, State> = {
 
 export default function UsersPage(props: PageProps<Data>) {
   return (
-    <ul class="flex flex-col gap-2">
-      {Object.entries(props.data.users).map(([id, user]) => {
+    <ul class="flex flex-col gap-2" f-client-nav>
+      {props.data.users.map((user) => {
         return (
-          <li key={id} class="shadow-md p-4" f-client-nav>
-            <a href={`/users/${id}`} class="font-bold">
+          <li key={user.id} class="shadow-md p-4">
+            <a href={`/users/${user.id}`} class="font-bold">
               {user.name}
             </a>
           </li>
