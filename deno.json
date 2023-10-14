@@ -26,7 +26,8 @@
     "⚫/": "./demo/core/",
     "🔧/": "./demo/services/",
     "$fresh-testing-library": "./mod.ts",
-    "$fresh-testing-library/": "./"
+    "$fresh-testing-library/": "./",
+    "$gfm": "https://deno.land/x/gfm@0.2.5/mod.ts"
   },
   "compilerOptions": { "jsx": "react-jsx", "jsxImportSource": "preact" },
   "lint": { "rules": { "tags": ["fresh", "recommended"] } }
