@@ -39,6 +39,7 @@ expect.extend(jestDOMMatchers);
  * {@link https://github.com/jestjs/jest/blob/v29.7.0/docs/ExpectAPI.md}
  */
 declare module "npm:expect@29.7.0" {
+  // deno-lint-ignore no-empty-interface
   interface Matchers<R>
     extends
       TestingLibraryMatchers<R, ReturnType<typeof expect.stringContaining>> {}
