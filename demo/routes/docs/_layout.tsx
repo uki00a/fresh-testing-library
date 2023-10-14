@@ -29,7 +29,12 @@ function Sidebar(props: SidebarProps) {
       <ul class="flex flex-col gap-2">
         {props.docs.map((x) => (
           <li>
-            <a href={x.link}>{x.title}</a>
+            <a
+              class="[data-current]:font-bold"
+              href={x.link}
+            >
+              {x.title}
+            </a>
           </li>
         ))}
       </ul>
