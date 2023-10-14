@@ -26,7 +26,7 @@ interface SidebarProps {
 function Sidebar(props: SidebarProps) {
   return (
     <nav f-client-nav>
-      <ul>
+      <ul class="flex flex-col gap-2">
         {props.docs.map((x) => (
           <li>
             <a href={x.link}>{x.title}</a>
