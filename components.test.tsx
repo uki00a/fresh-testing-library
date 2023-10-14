@@ -1,14 +1,12 @@
 import {
   cleanup,
+  expect,
   render,
   setup,
   userEvent,
   waitFor,
 } from "$fresh-testing-library";
 import { computed, signal, useSignal } from "@preact/signals";
-import { assertEquals } from "$std/assert/assert_equals.ts";
-import { assertExists } from "$std/assert/assert_exists.ts";
-import { assertFalse } from "$std/assert/assert_false.ts";
 import { afterEach, beforeAll, describe, it } from "$std/testing/bdd.ts";
 
 import Counter from "🏝️/Counter.tsx";
@@ -23,15 +21,15 @@ describe("$fresh-testing-library/components", () => {
     const screen = render(<Counter count={count} />);
     const plusOne = screen.getByRole("button", { name: "+1" });
     const minusOne = screen.getByRole("button", { name: "-1" });
-    assertExists(screen.getByText("9"));
+    expect(screen.getByText("9")).toBeInTheDocument();
 
     await user.click(plusOne);
-    assertFalse(screen.queryByText("9"));
-    assertExists(screen.getByText("10"));
+    expect(screen.queryByText("9")).not.toBeInTheDocument();
+    expect(screen.getByText("10")).toBeInTheDocument();
 
     await user.click(minusOne);
-    assertExists(screen.getByText("9"));
-    assertFalse(screen.queryByText("10"));
+    expect(screen.getByText("9")).toBeInTheDocument();
+    expect(screen.queryByText("10")).not.toBeInTheDocument();
   });
 
   it("supports changing the `src` of the `img` element", async () => {
@@ -60,9 +58,9 @@ describe("$fresh-testing-library/components", () => {
     const img = screen.getByRole("img");
     const button = screen.getByRole("button", { name: "➡️" });
 
-    assertEquals(img.getAttribute("src"), images[0]);
+    expect(img).toHaveAttribute("src", images[0]);
     await user.click(button);
-    assertEquals(img.getAttribute("src"), images[1]);
+    expect(img).toHaveAttribute("src", images[1]);
   });
 
   it("supports Clipboard API", async () => {
@@ -81,7 +79,7 @@ describe("$fresh-testing-library/components", () => {
     const button = screen.getByRole("button", { name: "COPY" });
     await user.click(button);
     await waitFor(async () => {
-      assertEquals(await navigator.clipboard.readText(), text);
+      expect(await navigator.clipboard.readText()).toBe(text);
     });
   });
 });

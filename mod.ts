@@ -1,4 +1,5 @@
 export * from "./components.ts";
+export * from "./expect.ts";
 export {
   createHandlerContext,
   createMiddlewareHandlerContext,
