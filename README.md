@@ -46,10 +46,8 @@ import {
   setup,
   userEvent,
 } from "$fresh-testing-library/components.ts";
+import { expect } from "$fresh-testing-library/expect.ts";
 import { signal } from "@preact/signals";
-import { assertEquals } from "$std/assert/assert_equals.ts";
-import { assertExists } from "$std/assert/assert_exists.ts";
-import { assertFalse } from "$std/assert/assert_false.ts";
 import { afterEach, beforeAll, describe, it } from "$std/testing/bdd.ts";
 
 import Counter from "🏝️/Counter.tsx";
@@ -64,15 +62,15 @@ describe("islands/Counter.tsx", () => {
     const screen = render(<Counter count={count} />);
     const plusOne = screen.getByRole("button", { name: "+1" });
     const minusOne = screen.getByRole("button", { name: "-1" });
-    assertExists(screen.getByText("9"));
+    expect(screen.getByText("9")).toBeInTheDocument();
 
     await user.click(plusOne);
-    assertFalse(screen.queryByText("9"));
-    assertExists(screen.getByText("10"));
+    expect(screen.queryByText("9")).not.toBeInTheDocument();
+    expect(screen.getByText("10")).toBeInTheDocument();
 
     await user.click(minusOne);
-    assertExists(screen.getByText("9"));
-    assertFalse(screen.queryByText("10"));
+    expect(screen.getByText("9")).toBeInTheDocument();
+    expect(screen.queryByText("10")).not.toBeInTheDocument();
   });
 });
 ```
@@ -192,4 +190,6 @@ import {
   setup,
   userEvent,
 } from "$fresh-testing-library/components.ts";
+
+import { expect } from "$fresh-testing-library/expect.ts";
 ```
