@@ -5,6 +5,16 @@ import { expect } from "npm:expect@29.7.0";
 export { expect, JestAssertionError } from "npm:expect@29.7.0";
 
 /**
+ * {@link https://github.com/jestjs/jest/tree/v29.7.0/packages/jest-mock}
+ */
+export {
+  fn,
+  mocked,
+  replaceProperty,
+  spyOn,
+} from "https://esm.sh/jest-mock@29.7.0?pin=v133";
+
+/**
  * {@link https://github.com/testing-library/jest-dom}
  */
 import * as jestDOMMatchers from "https://esm.sh/@testing-library/jest-dom@6.1.4/matchers?pin=v133";
