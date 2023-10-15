@@ -75,6 +75,29 @@ describe("islands/Counter.tsx", () => {
 });
 ```
 
+### `expect()` API
+
+`$fresh-testing-library/expect.ts` provides the `expect()` API. It is based on
+[expect](https://github.com/jestjs/jest/tree/v29.7.0/packages/expect) and
+[jest-mock](https://github.com/jestjs/jest/tree/v29.7.0/packages/jest-mock)
+packages, so it is compatible with Jest.
+
+```ts
+import { expect, fn } from "$fresh-testing-library/expect.ts";
+
+Deno.test("expect", () => {
+  expect(1).toBe(1);
+
+  const spy = fn();
+  expect(spy).not.toBeCalled();
+  spy();
+  expect(spy).toBeCalled();
+
+  // Matchers provided by `@testing-library/jest-dom` are also supported.
+  expect(expect().toBeInTheDocument).toBeTruthy();
+});
+```
+
 ### Testing fresh middlewares
 
 You can test fresh middlewares using `createMiddlewareHandlerContext` API:
