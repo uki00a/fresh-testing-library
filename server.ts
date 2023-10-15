@@ -235,8 +235,8 @@ export function createRouteContext<
 ): RouteContext<TData, TState>;
 
 /**
- * This function creates `RouteContext` which can be passed directly to fresh routes.
- * If `CreateRouteContextOptions.manifest` is specified, `RouteContext.params` is automatically inferred from `request.url`.
+ * This function creates {@linkcode RouteContext} which can be passed directly to fresh routes.
+ * If {@linkcode CreateRouteContextOptions.manifest} is specified, {@linkcode RouteContext.params} is automatically inferred from {@linkcode Request.url}.
  */
 export function createRouteContext<
   TData = unknown,
@@ -299,8 +299,8 @@ export function createMiddlewareHandlerContext<
 ): MiddlewareHandlerContext<TState>;
 
 /**
- * This function creates `MiddlewareHandlerContext` which can be passed directly to fresh middlewares.
- * If `CreateMiddlewareHandlerContextOptions.manifest` is specified, `MiddlewareHandlerContext.params` is automatically inferred from `request.url`.
+ * This function creates {@linkcode MiddlewareHandlerContext} which can be passed directly to fresh middlewares.
+ * If {@linkcode CreateMiddlewareHandlerContextOptions.manifest} is specified, {@linkcode MiddlewareHandlerContext.params} is automatically inferred from {@linkcode Request.url}.
  *
  * @example
  * ```ts
