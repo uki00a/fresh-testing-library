@@ -94,7 +94,7 @@ Deno.test("expect", () => {
   expect(spy).toBeCalled();
 
   // Matchers provided by `@testing-library/jest-dom` are also supported.
-  expect(expect().toBeInTheDocument).toBeTruthy();
+  expect(expect(null).toBeInTheDocument).toBeTruthy();
 });
 ```
 
