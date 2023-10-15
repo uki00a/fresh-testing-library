@@ -21,42 +21,84 @@ import {
   renderSyncRouteComponent,
 } from "./internal/fresh/mod.ts";
 
-interface CreateHandlerContextOptions<
+/**
+ * Options which can be passed to {@linkcode createHandlerContext}.
+ */
+export interface CreateHandlerContextOptions<
   TState extends Record<string, unknown> = Record<string, unknown>,
-> {
-  params: Record<string, string>;
-  state: TState;
-  localAddr: Deno.NetAddr;
-  remoteAddr: Deno.NetAddr;
+> extends ContextFactoryOptions<TState> {
+  /**
+   * @description This option allows overriding a response which is returned by {@linkcode HandlerContext.render}.
+   */
   response: Response | HandlerContext["render"];
+
+  /**
+   * @description This option allows overriding a response which is returned by {@linkcode HandlerContext.renderNotFound}.
+   */
   responseNotFound: Response | HandlerContext["renderNotFound"];
-  manifest: Manifest;
 }
 
-interface CreateRouteContextOptions<
+/**
+ * Options which can be passed to {@linkcode createRouteContext}.
+ */
+export interface CreateRouteContextOptions<
   // deno-lint-ignore no-explicit-any
   TData = any,
   TState extends Record<string, unknown> = Record<string, unknown>,
-> {
-  params: Record<string, string>;
-  state: TState;
-  localAddr: Deno.NetAddr;
-  remoteAddr: Deno.NetAddr;
+> extends ContextFactoryOptions<TState> {
+  /**
+   * @description This option allows overriding a response which is returned by {@linkcode RouteContext.renderNotFound}.
+   */
   responseNotFound: Response | RouteContext["renderNotFound"];
-  manifest: Manifest;
+
+  /**
+   * @description This option allows overriding {@linkcode RouteContext.data}.
+   */
   data: TData;
 }
 
-interface CreateMiddlewareHandlerContextOptions<
+/**
+ * Options which can be passed to {@linkcode createMiddlewareHandlerContext}.
+ */
+export interface CreateMiddlewareHandlerContextOptions<
   TState extends Record<string, unknown> = Record<string, unknown>,
-> {
-  params: Record<string, string>;
-  state: TState;
-  localAddr: Deno.NetAddr;
-  remoteAddr: Deno.NetAddr;
+> extends ContextFactoryOptions<TState> {
+  /**
+   * @description This option allows overriding a response which is returned by {@linkcode MiddlewareHandlerContext.next}.
+   */
   response: Response;
-  manifest: Manifest;
+
+  /**
+   * @description This option allows overriding {@linkcode MiddlewareHandlerContext.destination} which is automatically inferred from {@linkcode Manifest} and {@linkcode Request.url} by default.
+   */
   destination: MiddlewareHandlerContext["destination"];
+}
+
+interface ContextFactoryOptions<TState extends Record<string, unknown>> {
+  /**
+   * @description This option allows overriding `ctx.params` property.
+   */
+  params: Record<string, string>;
+
+  /**
+   * @description This option allows injecting dependencies into `ctx.state`.
+   */
+  state: TState;
+
+  /**
+   * @description Optionally, the {@linkcode Manifest} object which is exported from `fresh.gen.ts` can be set to this option. If this option is specified, some properties, such as `ctx.params`, is automatically inferred from {@linkcode Request.url}.
+   */
+  manifest: Manifest;
+
+  /**
+   * @description This options allows overriding `ctx.localAddr`. If not specified, `ctx.localAddr` is automatically inferred from {@linkcode Request.url}.
+   */
+  localAddr: Deno.NetAddr;
+
+  /**
+   * @description This options allows overriding `ctx.remoteAddr`.
+   */
+  remoteAddr: Deno.NetAddr;
 }
 
 export function createHandlerContext(
@@ -70,6 +112,26 @@ export function createHandlerContext<
   options?: Partial<CreateHandlerContextOptions<TState>>,
 ): HandlerContext<TData, TState>;
 
+/**
+ * This function creates {@linkcode HandlerContext} which can be passed directly to fresh handlers.
+ * If {@linkcode CreateHandlerContextOptions.manifest} is specified, {@linkcode HandlerContext.params} and a route to be rendered by {@linkcode HandlerContext.render} is automatically inferred from {@linkcode Request.url}.
+ *
+ * @example
+ * ```ts
+ * import { createHandlerContext } from "$fresh-testing-library/server.ts";
+ * import { handler } from "$/routes/api/users/[id].ts";
+ * import manifest from "$/fresh.gen.ts";
+ * import { assertExists } from "$std/assert/assert_exists.ts";
+ * import { assertEquals } from "$std/assert/assert_equals.ts";
+ *
+ * const request = new Request("http://localhost:8000/api/users/34");
+ * const ctx = createHandlerContext(request, { manifest });
+ * assertEquals(ctx.params, { id: "34" });
+ *
+ * assertExists(handler.GET);
+ * const response = await handler.GET(request, ctx);
+ * ```
+ */
 export function createHandlerContext<
   TData = unknown,
   TState extends Record<string, unknown> = Record<string, unknown>,
@@ -172,6 +234,10 @@ export function createRouteContext<
   options?: Partial<CreateRouteContextOptions<TData, TState>>,
 ): RouteContext<TData, TState>;
 
+/**
+ * This function creates `RouteContext` which can be passed directly to fresh routes.
+ * If `CreateRouteContextOptions.manifest` is specified, `RouteContext.params` is automatically inferred from `request.url`.
+ */
 export function createRouteContext<
   TData = unknown,
   TState extends Record<string, unknown> = Record<string, unknown>,
@@ -232,6 +298,25 @@ export function createMiddlewareHandlerContext<
   options?: Partial<CreateMiddlewareHandlerContextOptions<TState>>,
 ): MiddlewareHandlerContext<TState>;
 
+/**
+ * This function creates `MiddlewareHandlerContext` which can be passed directly to fresh middlewares.
+ * If `CreateMiddlewareHandlerContextOptions.manifest` is specified, `MiddlewareHandlerContext.params` is automatically inferred from `request.url`.
+ *
+ * @example
+ * ```ts
+ * import { createMiddlewareHandlerContext } from "$fresh-testing-library/server.ts";
+ * import { createLoggerMiddleware } from "$/routes/(_middlewares)/logger.ts";
+ * import manifest from "$/fresh.gen.ts";
+ * import { assertEquals } from "$std/assert/assert_equals.ts";
+ *
+ * const middleware = createLoggerMiddleware(console);
+ * const request = new Request("http://localhost:8000/api/users/123");
+ * const ctx = createMiddlewareHandlerContext(request, { manifest });
+ * assertEquals(ctx.params, { id: "123" });
+ *
+ * await middleware(request, ctx);
+ * ```
+ */
 export function createMiddlewareHandlerContext<
   TState extends Record<string, unknown> = Record<string, unknown>,
 >(
