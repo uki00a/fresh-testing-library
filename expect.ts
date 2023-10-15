@@ -11,4 +11,4 @@
 /**
  * {@link https://github.com/jestjs/jest/tree/v29.7.0/packages/expect}
  */
-export { expect } from "./deps/expect.ts";
+export { expect, fn, mocked, replaceProperty, spyOn } from "./deps/expect.ts";
