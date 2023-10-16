@@ -53,10 +53,14 @@ async function checkImports(): Promise<void> {
 
 function isAllowedSpecifier(specifier: string, referrer: string): boolean {
   if (
-    specifier.startsWith("npm:") || specifier.startsWith("node:") ||
-    URL.canParse(specifier)
+    specifier.startsWith("npm:") || specifier.startsWith("node:")
   ) {
     return true;
+  }
+
+  if (URL.canParse(specifier)) {
+    const url = new URL(specifier);
+    return url.hostname !== "esm.sh" || url.searchParams.has("pin");
   }
 
   if (isAbsolute(specifier)) {
