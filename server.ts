@@ -116,7 +116,6 @@ export function createHandlerContext<
  * This function creates {@linkcode HandlerContext} which can be passed directly to fresh handlers.
  * If {@linkcode CreateHandlerContextOptions.manifest} is specified, {@linkcode HandlerContext.params} and a route to be rendered by {@linkcode HandlerContext.render} is automatically inferred from {@linkcode Request.url}.
  *
- * @example
  * ```ts
  * import { createHandlerContext } from "$fresh-testing-library/server.ts";
  * import { handler } from "$/routes/api/users/[id].ts";
@@ -302,7 +301,6 @@ export function createMiddlewareHandlerContext<
  * This function creates {@linkcode MiddlewareHandlerContext} which can be passed directly to fresh middlewares.
  * If {@linkcode CreateMiddlewareHandlerContextOptions.manifest} is specified, {@linkcode MiddlewareHandlerContext.params} is automatically inferred from {@linkcode Request.url}.
  *
- * @example
  * ```ts
  * import { createMiddlewareHandlerContext } from "$fresh-testing-library/server.ts";
  * import { createLoggerMiddleware } from "$/routes/(_middlewares)/logger.ts";
