@@ -7,10 +7,10 @@ import {
 
 {
   // Run test cases written in `README.md`.
-  // const readmeURL = new URL(import.meta.resolve("./README.md"));
-  // const readme = await Deno.readTextFile(readmeURL);
-  // const blocks = parseMarkdown(readme);
-  // await runCodeBlocks(blocks);
+  const readmeURL = new URL(import.meta.resolve("./README.md"));
+  const readme = await Deno.readTextFile(readmeURL);
+  const blocks = parseMarkdown(readme);
+  await runCodeBlocks(blocks);
 }
 
 Deno.test("[doctest] server.ts", async (t) => {
