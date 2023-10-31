@@ -61,7 +61,16 @@ function isAllowedSpecifier(specifier: string, referrer: string): boolean {
 
   if (URL.canParse(specifier)) {
     const url = new URL(specifier);
-    return url.hostname !== "esm.sh" || url.searchParams.has("pin");
+    if (url.hostname !== "esm.sh") {
+      return true;
+    }
+
+    if (url.pathname.startsWith("/*preact-render-to-string@")) {
+      // NOTE: `preact-render-to-string` should not be pinned.
+      return true;
+    }
+
+    return url.searchParams.has("pin");
   }
 
   if (isAbsolute(specifier)) {
