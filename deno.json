@@ -28,7 +28,7 @@
     "$fresh-testing-library": "./mod.ts",
     "$fresh-testing-library/": "./",
     "$gfm": "https://deno.land/x/gfm@0.2.5/mod.ts",
-    "TODO(#58)": "The folloing line should be remove once fresh@v1.5.3 is released.",
+    "!TODO(#58)": "The following line should be remove once fresh@v1.5.3 is released.",
     "preact-render-to-string": "./deps/preact-render-to-string.ts"
   },
   "compilerOptions": { "jsx": "react-jsx", "jsxImportSource": "preact" },
