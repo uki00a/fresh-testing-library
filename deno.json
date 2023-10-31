@@ -28,8 +28,8 @@
     "$fresh-testing-library": "./mod.ts",
     "$fresh-testing-library/": "./",
     "$gfm": "https://deno.land/x/gfm@0.2.5/mod.ts",
-    "!TODO(#58)": "The following line should be remove once fresh@v1.5.3 is released.",
-    "preact-render-to-string": "./deps/preact-render-to-string.ts"
+    "__TODO(#58)__": "The following line should be removed once fresh@v1.5.3 is released.",
+    "preact-render-to-string": "https://esm.sh/*preact-render-to-string@6.2.2"
   },
   "compilerOptions": { "jsx": "react-jsx", "jsxImportSource": "preact" },
   "lint": { "rules": { "tags": ["fresh", "recommended"] } }
