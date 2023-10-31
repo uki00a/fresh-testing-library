@@ -1,7 +1,7 @@
 import { extname } from "node:path";
 import type { ClassAttributes, VNode } from "preact";
 import { h } from "preact";
-import { render } from "preact-render-to-string";
+import { render } from "../../deps/preact-render-to-string.ts";
 import type {
   Manifest,
   MiddlewareHandler,

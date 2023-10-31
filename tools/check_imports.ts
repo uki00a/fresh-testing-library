@@ -51,6 +51,7 @@ async function checkImports(): Promise<void> {
   }
 }
 
+const acceptableBareSpecifiers = ["preact"];
 function isAllowedSpecifier(specifier: string, referrer: string): boolean {
   if (
     specifier.startsWith("npm:") || specifier.startsWith("node:")
@@ -77,7 +78,7 @@ function isAllowedSpecifier(specifier: string, referrer: string): boolean {
 
   // Bare specifiers
   return specifier.startsWith("$fresh/") ||
-    specifier === "preact-render-to-string" || specifier === "preact";
+    acceptableBareSpecifiers.includes(specifier);
 }
 
 function isRelative(specifier: string): boolean {
