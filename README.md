@@ -260,6 +260,7 @@ describe("msw", () => {
   afterAll(() => server.close());
 
   it("can be used to intercept requests", async () => {
+    console.info("msw test");
     const res = await fetch("/api/user");
     expect(await res.json()).toEqual({ id: 1, name: "foo" });
   });
