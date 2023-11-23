@@ -226,7 +226,7 @@ test a component which calls `fetch()` with a relative URL.
 
 First, add the following lines to `deno.json`:
 
-```javascript
+```jsonc
 {
   "imports": {
     "msw": "npm:msw@2.0.8",
