@@ -229,9 +229,9 @@ First, add the following lines to `deno.json`:
 ```jsonc
 {
   "imports": {
+    // Add the following lines:
     "msw": "npm:msw@2.0.8",
-    "msw/node": "npm:msw@2.0.8/node",
-    // ...
+    "msw/node": "npm:msw@2.0.8/node"
   }
 }
 ```
