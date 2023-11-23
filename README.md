@@ -224,7 +224,7 @@ import { expect } from "$fresh-testing-library/expect.ts";
 By combining [MSW](https://github.com/mswjs/msw) and `--location` flag, you can
 test a component which calls `fetch()` with a relative URL.
 
-First, add the following lines to `deno.json`.
+First, add the following lines to `deno.json`:
 
 ```javascript
 {
@@ -260,9 +260,7 @@ describe("msw", () => {
   afterAll(() => server.close());
 
   it("can be used to intercept requests", async () => {
-    const res = await globalThis.fetch("/api/user", {
-      method: "GET",
-    });
+    const res = await fetch("/api/user");
     expect(await res.json()).toEqual({ id: 1, name: "foo" });
   });
 });
