@@ -238,7 +238,7 @@ First, add the following lines to `deno.json`:
 
 Then you can use MSW as follows:
 
-```typescript
+```ts
 import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
 import { expect } from "$fresh-testing-library/expect.ts";
