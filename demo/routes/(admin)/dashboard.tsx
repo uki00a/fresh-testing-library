@@ -1,7 +1,7 @@
 import { Head } from "$fresh/runtime.ts";
 import type { Handlers, PageProps } from "$fresh/server.ts";
 
-interface Data {
+export interface Data {
   totalUsers: number;
   activeUsers: number;
 }

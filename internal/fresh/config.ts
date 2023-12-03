@@ -22,9 +22,10 @@ export function resolveConfig(
       target: [],
       ...config.build,
     },
-    staticDir: config.staticDir ?? manifest
-      ? join(new URL(manifest.baseUrl).pathname, kFreshStaticDir)
-      : kFreshStaticDir,
+    staticDir: config.staticDir ??
+      (manifest
+        ? join(new URL(manifest.baseUrl).pathname, kFreshStaticDir)
+        : kFreshStaticDir),
     plugins: config.plugins ?? [],
     router: config.router,
     basePath: config.router?.basePath ?? "",

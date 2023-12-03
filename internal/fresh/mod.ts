@@ -3,6 +3,7 @@ import type { ClassAttributes, VNode } from "preact";
 import { h } from "preact";
 import { render } from "../../deps/preact-render-to-string.ts";
 import type {
+  FreshContext,
   Manifest,
   MiddlewareHandler,
   PageProps,
@@ -124,23 +125,11 @@ export function isSyncRouteComponent(
 
 const kContainerElement = "div";
 export function renderSyncRouteComponent(
+  ctx: FreshContext,
   routeComponent: SyncRouteComponent,
-  request: Request,
-  routePattern: string,
-  params: PageProps["params"],
-  data: PageProps["data"],
-  state: PageProps["state"],
 ) {
-  const pageProps: PageProps = {
-    url: new URL(request.url),
-    route: routePattern,
-    params,
-    data,
-    state,
-  };
-
   // NOTE: It seems that there is a mismatch between the type definitions of `preact` and `preact-render-to-string`.
-  const vnode = h(kContainerElement, {}, h(routeComponent, pageProps)) as VNode<
+  const vnode = h(kContainerElement, {}, h(routeComponent, ctx)) as VNode<
     ClassAttributes<HTMLElement>
   >; // TODO: remove this type casting.
   const html = render(vnode);
@@ -154,7 +143,7 @@ export function renderSyncRouteComponent(
 export async function renderAsyncRouteComponent(
   routeComponent: AsyncRouteComponent,
   request: Request,
-  ctx: RouteContext,
+  ctx: FreshContext,
 ): Promise<Response> {
   const result = await routeComponent(
     request,

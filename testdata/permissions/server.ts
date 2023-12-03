@@ -1,9 +1,7 @@
 import {
-  createHandlerContext,
-  createMiddlewareHandlerContext,
+  createFreshContext,
   createRouteContext,
 } from "$fresh-testing-library/server.ts";
 
-createHandlerContext();
-createMiddlewareHandlerContext();
+createFreshContext();
 createRouteContext();

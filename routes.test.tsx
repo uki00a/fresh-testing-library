@@ -1,5 +1,5 @@
 import {
-  createHandlerContext,
+  createFreshContext,
   createRouteContext,
 } from "$fresh-testing-library/server.ts";
 import {
@@ -15,6 +15,7 @@ import { afterEach, beforeAll, describe, it } from "$std/testing/bdd.ts";
 import { cheerio } from "./deps/cheerio.ts";
 import { default as UserDetail } from "./demo/routes/users/[id].tsx";
 import { default as manifest } from "./demo/fresh.gen.ts";
+import type { Data } from "./demo/routes/(admin)/dashboard.tsx";
 import { handler } from "./demo/routes/(admin)/dashboard.tsx";
 import { createInMemoryUsers } from "./demo/services/users.ts";
 
@@ -25,7 +26,7 @@ describe("routes testing", () => {
   it("supports testing an async route component", async () => {
     const req = new Request("http://localhost:8000/users/2");
     const state = { users: createInMemoryUsers() };
-    const ctx = createRouteContext<void, typeof state>(req, {
+    const ctx = createFreshContext<void, typeof state>(req, {
       manifest,
       state,
     });
@@ -38,7 +39,7 @@ describe("routes testing", () => {
   it("supports testing a route component with `handler.GET`", async () => {
     // https://github.com/uki00a/fresh-testing-library/issues/38
     const request = new Request("http://localhost:8000/dashboard");
-    const ctx = createHandlerContext(
+    const ctx = createFreshContext<Data, Data>(
       request,
       {
         state: { activeUsers: 45, totalUsers: 123 },

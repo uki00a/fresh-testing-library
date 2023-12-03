@@ -25,7 +25,7 @@ import { resolveConfig } from "./internal/fresh/config.ts";
 export interface CreateFreshContextOptions<
   // deno-lint-ignore no-explicit-any
   TData = any,
-  TState extends Record<string, unknown> = Record<string, unknown>,
+  TState = Record<string, unknown>,
 > {
   /**
    * @description This option allows overriding `ctx.params` property.
@@ -107,7 +107,7 @@ export type CreateMiddlewareHandlerContextOptions<
 
 export function createFreshContext(
   request: Request,
-): FreshContext<unknown, Record<string, unknown>>;
+): FreshContext<Record<string, unknown>, unknown>;
 
 export function createFreshContext<
   TData = unknown,
@@ -137,7 +137,7 @@ export function createFreshContext<
  */
 export function createFreshContext<
   TData = unknown,
-  TState extends Record<string, unknown> = Record<string, unknown>,
+  TState = Record<string, unknown>,
 >(
   request: Request,
   options?: Partial<CreateFreshContextOptions<TData, TState>>,
@@ -166,8 +166,8 @@ export function createFreshContext<
     manifest,
     params: _params,
     state = {} as TState,
-    data = undefined as TData,
-    response = createDefaultResponse(),
+    data = {} as TData,
+    response,
     responseNotFound = createNotFoundResponse(),
     localAddr = createDefaultLocalAddr(url),
     remoteAddr = createDefaultRemoteAddr(url),
@@ -180,7 +180,7 @@ export function createFreshContext<
 
   function createRender() {
     if (response instanceof Response) {
-      return () => response;
+      return () => response.clone();
     }
 
     if (manifest) {
@@ -190,26 +190,23 @@ export function createFreshContext<
         if (
           maybeRouteAndPathPattern && isRouteModule(maybeRouteAndPathPattern[0])
         ) {
-          const [route, pattern] = maybeRouteAndPathPattern;
+          const [route] = maybeRouteAndPathPattern;
           const routeComponent = route.default;
           if (routeComponent == null) {
             return createDefaultResponse();
           }
+          const renderCtx = data === undefined ? ctx : { ...ctx, data };
 
           if (isSyncRouteComponent(routeComponent)) {
             return renderSyncRouteComponent(
+              renderCtx,
               routeComponent,
-              request,
-              pattern,
-              params,
-              data,
-              state,
             );
           } else {
             return renderAsyncRouteComponent(
               routeComponent,
               request,
-              createRouteContext(request, { data, manifest, state }),
+              renderCtx,
             );
           }
         }
@@ -251,8 +248,13 @@ export function createFreshContext<
       ? () => responseNotFound
       : responseNotFound,
     next: response instanceof Response
-      ? () => Promise.resolve(response)
-      : () => Promise.resolve(response(data)),
+      ? () => Promise.resolve(response.clone())
+      : () =>
+        response == null
+          ? Promise.resolve(createDefaultResponse())
+          : Promise.resolve(response(data)).then((response) =>
+            response.clone()
+          ),
     route: determineRoute(request, manifest),
     destination,
   };
