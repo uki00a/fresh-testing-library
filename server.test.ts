@@ -242,7 +242,7 @@ describe("$fresh-testing-library/server", () => {
   });
 
   describe("createRouteContext", () => {
-    it("returns a `RouteContext` which is a subset of a `FreshContext`", async () => {
+    it("returns a `RouteContext` which is a subset of a `FreshContext`", () => {
       function removeMethods<T extends RouteContext | FreshContext>(
         ctx: T,
       ): Record<keyof T, unknown> {
