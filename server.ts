@@ -5,9 +5,9 @@
  */
 
 import type {
-  HandlerContext,
+  FreshConfig,
+  FreshContext,
   Manifest,
-  MiddlewareHandlerContext,
   RouteContext,
 } from "$fresh/server.ts";
 import {
@@ -20,61 +20,13 @@ import {
   renderAsyncRouteComponent,
   renderSyncRouteComponent,
 } from "./internal/fresh/mod.ts";
+import { resolveConfig } from "./internal/fresh/config.ts";
 
-/**
- * Options which can be passed to {@linkcode createHandlerContext}.
- */
-export interface CreateHandlerContextOptions<
-  TState extends Record<string, unknown> = Record<string, unknown>,
-> extends ContextFactoryOptions<TState> {
-  /**
-   * @description This option allows overriding a response which is returned by {@linkcode HandlerContext.render}.
-   */
-  response: Response | HandlerContext["render"];
-
-  /**
-   * @description This option allows overriding a response which is returned by {@linkcode HandlerContext.renderNotFound}.
-   */
-  responseNotFound: Response | HandlerContext["renderNotFound"];
-}
-
-/**
- * Options which can be passed to {@linkcode createRouteContext}.
- */
-export interface CreateRouteContextOptions<
+export interface CreateFreshContextOptions<
   // deno-lint-ignore no-explicit-any
   TData = any,
   TState extends Record<string, unknown> = Record<string, unknown>,
-> extends ContextFactoryOptions<TState> {
-  /**
-   * @description This option allows overriding a response which is returned by {@linkcode RouteContext.renderNotFound}.
-   */
-  responseNotFound: Response | RouteContext["renderNotFound"];
-
-  /**
-   * @description This option allows overriding {@linkcode RouteContext.data}.
-   */
-  data: TData;
-}
-
-/**
- * Options which can be passed to {@linkcode createMiddlewareHandlerContext}.
- */
-export interface CreateMiddlewareHandlerContextOptions<
-  TState extends Record<string, unknown> = Record<string, unknown>,
-> extends ContextFactoryOptions<TState> {
-  /**
-   * @description This option allows overriding a response which is returned by {@linkcode MiddlewareHandlerContext.next}.
-   */
-  response: Response;
-
-  /**
-   * @description This option allows overriding {@linkcode MiddlewareHandlerContext.destination} which is automatically inferred from {@linkcode Manifest} and {@linkcode Request.url} by default.
-   */
-  destination: MiddlewareHandlerContext["destination"];
-}
-
-interface ContextFactoryOptions<TState extends Record<string, unknown>> {
+> {
   /**
    * @description This option allows overriding `ctx.params` property.
    */
@@ -99,58 +51,112 @@ interface ContextFactoryOptions<TState extends Record<string, unknown>> {
    * @description This options allows overriding `ctx.remoteAddr`.
    */
   remoteAddr: Deno.NetAddr;
+
+  /**
+   * @description This option allows overriding {@linkcode FreshContext.data}.
+   */
+  data: TData;
+
+  /**
+   * @description This option allows overriding a response which is returned by {@linkcode FreshContext.render}.
+   */
+  response: Response | FreshContext["render"];
+
+  /**
+   * @description This option allows overriding a response which is returned by {@linkcode FreshContext.renderNotFound}.
+   */
+  responseNotFound: Response | FreshContext["renderNotFound"];
+
+  /**
+   * @description This option allows overriding {@linkcode FreshContext.destination} which is automatically inferred from {@linkcode Manifest} and {@linkcode Request.url} by default.
+   */
+  destination: FreshContext["destination"];
+
+  /**
+   * @description If you want to test behavior depending on {@linkcode FreshContext.config}, set the configuration object exported from `fresh.config.ts`.
+   */
+  config: FreshConfig;
 }
 
-export function createHandlerContext(
-  request: Request,
-): HandlerContext<unknown, Record<string, unknown>>;
+/**
+ * @deprecated Use {@linkcode CreateFreshContextOptions} instead.
+ *
+ * Options which can be passed to {@linkcode createHandlerContext}.
+ */
+export type CreateHandlerContextOptions<
+  TState extends Record<string, unknown> = Record<string, unknown>,
+> = CreateFreshContextOptions<unknown, TState>;
 
-export function createHandlerContext<
+/**
+ * Options which can be passed to {@linkcode createRouteContext}.
+ */
+export type CreateRouteContextOptions<
+  // deno-lint-ignore no-explicit-any
+  TData = any,
+  TState extends Record<string, unknown> = Record<string, unknown>,
+> = CreateFreshContextOptions<TData, TState>;
+
+/**
+ * @deprecated Use {@linkcode CreateFreshContextOptions} instead.
+ *
+ * Options which can be passed to {@linkcode createMiddlewareHandlerContext}.
+ */
+export type CreateMiddlewareHandlerContextOptions<
+  TState extends Record<string, unknown> = Record<string, unknown>,
+> = CreateFreshContextOptions<unknown, TState>;
+
+export function createFreshContext(
+  request: Request,
+): FreshContext<unknown, Record<string, unknown>>;
+
+export function createFreshContext<
   TData = unknown,
   TState extends Record<string, unknown> = Record<string, unknown>,
 >(
-  options?: Partial<CreateHandlerContextOptions<TState>>,
-): HandlerContext<TData, TState>;
+  options?: Partial<CreateFreshContextOptions<TData, TState>>,
+): FreshContext<TState, TData>;
 
 /**
- * This function creates {@linkcode HandlerContext} which can be passed directly to fresh handlers.
- * If {@linkcode CreateHandlerContextOptions.manifest} is specified, {@linkcode HandlerContext.params} and a route to be rendered by {@linkcode HandlerContext.render} is automatically inferred from {@linkcode Request.url}.
+ * This function creates {@linkcode FreshContext} which can be passed directly to fresh handlers, middlewares, routes, etc.
+ * If {@linkcode CreateFreshContextOptions.manifest} is specified, {@linkcode FreshContext.params} and a route to be rendered by {@linkcode FreshContext.render} is automatically inferred from {@linkcode Request.url}.
  *
  * ```ts
- * import { createHandlerContext } from "$fresh-testing-library/server.ts";
+ * import { createFreshContext } from "$fresh-testing-library/server.ts";
  * import { handler } from "$/routes/api/users/[id].ts";
  * import manifest from "$/fresh.gen.ts";
  * import { assertExists } from "$std/assert/assert_exists.ts";
  * import { assertEquals } from "$std/assert/assert_equals.ts";
  *
  * const request = new Request("http://localhost:8000/api/users/34");
- * const ctx = createHandlerContext(request, { manifest });
+ * const ctx = createFreshContext(request, { manifest });
  * assertEquals(ctx.params, { id: "34" });
  *
  * assertExists(handler.GET);
  * const response = await handler.GET(request, ctx);
  * ```
  */
-export function createHandlerContext<
+export function createFreshContext<
   TData = unknown,
   TState extends Record<string, unknown> = Record<string, unknown>,
 >(
   request: Request,
-  options?: Partial<CreateHandlerContextOptions<TState>>,
-): HandlerContext<TData, TState>;
+  options?: Partial<CreateFreshContextOptions<TData, TState>>,
+): FreshContext<TState, TData>;
 
-export function createHandlerContext<
+export function createFreshContext<
   TData = unknown,
   TState extends Record<string, unknown> = Record<string, unknown>,
 >(
-  requestOrOptions?: Request | Partial<CreateHandlerContextOptions<TState>>,
-  options?: Partial<CreateHandlerContextOptions<TState>>,
-): HandlerContext<TData, TState> {
+  requestOrOptions?:
+    | Request
+    | Partial<CreateFreshContextOptions<TData, TState>>,
+  options?: Partial<CreateFreshContextOptions<TData, TState>>,
+): FreshContext<TState, TData> {
   if (!(requestOrOptions instanceof Request)) {
     const { localAddr, ...restOptions } = requestOrOptions ?? {};
-    return createHandlerContext(
+    return createFreshContext(
       createDefaultRequest(localAddr),
-      restOptions,
+      restOptions as Partial<CreateFreshContextOptions<TData, TState>>,
     );
   }
 
@@ -160,10 +166,15 @@ export function createHandlerContext<
     manifest,
     params: _params,
     state = {} as TState,
-    response,
+    data = undefined as TData,
+    response = createDefaultResponse(),
     responseNotFound = createNotFoundResponse(),
     localAddr = createDefaultLocalAddr(url),
     remoteAddr = createDefaultRemoteAddr(url),
+    destination = determineRouteDestinationKind(
+      url.pathname,
+      options?.manifest,
+    ),
   } = options ?? {};
   const params = _params ?? (manifest ? extractParams(request, manifest) : {});
 
@@ -210,16 +221,42 @@ export function createHandlerContext<
     return () => createDefaultResponse();
   }
 
-  return {
+  const config = resolveConfig(options?.config ?? {}, manifest);
+  const { basePath } = config;
+  const render = createRender();
+  const ctx: FreshContext<TState, TData> = {
+    /**
+     * TODO: support `isPartial`.
+     */
+    isPartial: false,
+    config,
+    basePath,
+    url,
+    /**
+     * NOTE: `pattern` has been deprecated.
+     *
+     * {@link https://deno.land/x/fresh@1.6.0/server.ts?doc=&s=FreshContext#prop_pattern}
+     */
+    pattern: "",
     params: params ?? (manifest ? extractParams(request, manifest) : {}),
     state,
+    data,
     localAddr,
     remoteAddr,
-    render: createRender(),
+    Component() {
+      throw new Error("`FreshContext.Component` is not implemented yet.");
+    },
+    render,
     renderNotFound: responseNotFound instanceof Response
       ? () => responseNotFound
       : responseNotFound,
+    next: response instanceof Response
+      ? () => Promise.resolve(response)
+      : () => Promise.resolve(response(data)),
+    route: determineRoute(request, manifest),
+    destination,
   };
+  return ctx;
 }
 
 export function createRouteContext(
@@ -258,110 +295,25 @@ export function createRouteContext<
     const { localAddr, ...restOptions } = requestOrOptions ?? {};
     return createRouteContext(
       createDefaultRequest(localAddr),
-      restOptions,
+      restOptions as Partial<CreateRouteContextOptions<TData, TState>>,
     );
   }
-
-  const request: Request = requestOrOptions;
-  const url = new URL(request.url);
-  const {
-    params,
-    state = {} as TState,
-    responseNotFound = createNotFoundResponse(),
-    localAddr = createDefaultLocalAddr(url),
-    remoteAddr = createDefaultRemoteAddr(url),
-    manifest,
-    data = undefined as TData,
-  } = options ?? {};
-  return {
-    params: params ?? (manifest ? extractParams(request, manifest) : {}),
-    state,
-    localAddr,
-    remoteAddr,
-    renderNotFound: responseNotFound instanceof Response
-      ? () => responseNotFound
-      : responseNotFound,
-    url,
-    data,
-    route: determineRoute(request, manifest),
-  };
+  const { render: _render, next: _next, ...ctx } = createFreshContext(
+    requestOrOptions,
+    options,
+  );
+  return ctx;
 }
-
-export function createMiddlewareHandlerContext(
-  request: Request,
-): MiddlewareHandlerContext;
-
-export function createMiddlewareHandlerContext<
-  TState extends Record<string, unknown> = Record<string, unknown>,
->(
-  options?: Partial<CreateMiddlewareHandlerContextOptions<TState>>,
-): MiddlewareHandlerContext<TState>;
 
 /**
- * This function creates {@linkcode MiddlewareHandlerContext} which can be passed directly to fresh middlewares.
- * If {@linkcode CreateMiddlewareHandlerContextOptions.manifest} is specified, {@linkcode MiddlewareHandlerContext.params} is automatically inferred from {@linkcode Request.url}.
- *
- * ```ts
- * import { createMiddlewareHandlerContext } from "$fresh-testing-library/server.ts";
- * import { createLoggerMiddleware } from "$/routes/(_middlewares)/logger.ts";
- * import manifest from "$/fresh.gen.ts";
- * import { assertEquals } from "$std/assert/assert_equals.ts";
- *
- * const middleware = createLoggerMiddleware(console);
- * const request = new Request("http://localhost:8000/api/users/123");
- * const ctx = createMiddlewareHandlerContext(request, { manifest });
- * assertEquals(ctx.params, { id: "123" });
- *
- * await middleware(request, ctx);
- * ```
+ * @deprecated Use {@linkcode createFreshContext} instead.
  */
-export function createMiddlewareHandlerContext<
-  TState extends Record<string, unknown> = Record<string, unknown>,
->(
-  request: Request,
-  options?: Partial<CreateMiddlewareHandlerContextOptions<TState>>,
-): MiddlewareHandlerContext<TState>;
+export const createHandlerContext = createFreshContext;
 
-export function createMiddlewareHandlerContext<
-  TState extends Record<string, unknown> = Record<string, unknown>,
->(
-  requestOrOptions?:
-    | Request
-    | Partial<CreateMiddlewareHandlerContextOptions<TState>>,
-  options?: Partial<CreateMiddlewareHandlerContextOptions<TState>>,
-): MiddlewareHandlerContext<TState> {
-  if (!(requestOrOptions instanceof Request)) {
-    const { localAddr, ...restOptions } = requestOrOptions ?? {};
-    return createMiddlewareHandlerContext(
-      createDefaultRequest(localAddr),
-      restOptions,
-    );
-  }
-
-  const request: Request = requestOrOptions;
-  const url = new URL(request.url);
-  const {
-    params,
-    state = {} as TState,
-    response = createDefaultResponse(),
-    localAddr = createDefaultLocalAddr(url),
-    remoteAddr = createDefaultRemoteAddr(url),
-    destination = determineRouteDestinationKind(
-      url.pathname,
-      options?.manifest,
-    ),
-    manifest,
-  } = options ?? {};
-
-  return {
-    params: params ?? (manifest ? extractParams(request, manifest) : {}),
-    state,
-    localAddr,
-    remoteAddr,
-    destination,
-    next: () => Promise.resolve(response),
-  };
-}
+/**
+ * @deprecated Use {@linkcode createFreshContext} instead.
+ */
+export const createMiddlewareHandlerContext = createFreshContext;
 
 function createDefaultRequest(localAddr?: Deno.NetAddr): Request {
   return new Request(
