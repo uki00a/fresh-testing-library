@@ -128,10 +128,7 @@ export function renderSyncRouteComponent(
   ctx: FreshContext,
   routeComponent: SyncRouteComponent,
 ) {
-  // NOTE: It seems that there is a mismatch between the type definitions of `preact` and `preact-render-to-string`.
-  const vnode = h(kContainerElement, {}, h(routeComponent, ctx)) as VNode<
-    ClassAttributes<HTMLElement>
-  >; // TODO: remove this type casting.
+  const vnode = h(kContainerElement, {}, h(routeComponent, ctx));
   const html = render(vnode);
   return new Response(html, {
     headers: {
