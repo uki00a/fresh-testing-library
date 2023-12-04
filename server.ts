@@ -31,7 +31,7 @@ export interface CreateFreshContextOptions<
   TState = Record<string, unknown>,
 > {
   /**
-   * @description This option allows overriding `ctx.params` property.
+   * @description This option allows overriding {@linkcode FreshContext.params} property.
    */
   params: Record<string, string>;
 
