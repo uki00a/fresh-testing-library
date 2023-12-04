@@ -52,7 +52,7 @@ describe("$fresh-testing-library/server", () => {
       ]);
     });
 
-    it("can only receive `Request`", async () => {
+    it("can receive `Request`", async () => {
       const req = new Request("http://localhost:8019");
       const ctx = createFreshContext(req);
       assertContextHasServerInfoForRequest(ctx, req);
@@ -67,7 +67,7 @@ describe("$fresh-testing-library/server", () => {
       assertEquals(res.status, 404);
     });
 
-    it("can only receive an empty object", async () => {
+    it("can receive an empty object", async () => {
       const ctx = createFreshContext({});
       assertContextHasDefaultServerInfo(ctx);
       assertEquals(ctx.params, {});
