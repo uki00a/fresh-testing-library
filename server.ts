@@ -22,6 +22,9 @@ import {
 } from "./internal/fresh/mod.ts";
 import { resolveConfig } from "./internal/fresh/config.ts";
 
+/**
+ * Options which can be passed to {@linkcode createFreshContext}.
+ */
 export interface CreateFreshContextOptions<
   // deno-lint-ignore no-explicit-any
   TData = any,
@@ -38,9 +41,14 @@ export interface CreateFreshContextOptions<
   state: TState;
 
   /**
-   * @description Optionally, the {@linkcode Manifest} object which is exported from `fresh.gen.ts` can be set to this option. If this option is specified, some properties, such as `ctx.params`, is automatically inferred from {@linkcode Request.url}.
+   * @description Optionally, the {@linkcode Manifest} object which is exported from `fresh.gen.ts` can be set to this option. If this option is specified, some properties, such as {@linkcode FreshContext.params}, is automatically inferred from {@linkcode Request.url}.
    */
   manifest: Manifest;
+
+  /**
+   * @description Optionally, {@linkcode FreshConfig} object which is exported from `fresh.config.ts` can be set to this option. With this option, you can test the behavior that depends on {@linkcode FreshContext.config}.
+   */
+  config: FreshConfig;
 
   /**
    * @description This options allows overriding `ctx.localAddr`. If not specified, `ctx.localAddr` is automatically inferred from {@linkcode Request.url}.
@@ -71,11 +79,6 @@ export interface CreateFreshContextOptions<
    * @description This option allows overriding {@linkcode FreshContext.destination} which is automatically inferred from {@linkcode Manifest} and {@linkcode Request.url} by default.
    */
   destination: FreshContext["destination"];
-
-  /**
-   * @description If you want to test behavior depending on {@linkcode FreshContext.config}, set the configuration object exported from `fresh.config.ts`.
-   */
-  config: FreshConfig;
 }
 
 /**
