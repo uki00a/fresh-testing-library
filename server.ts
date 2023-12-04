@@ -36,12 +36,12 @@ export interface CreateFreshContextOptions<
   params: Record<string, string>;
 
   /**
-   * @description This option allows injecting dependencies into `ctx.state`.
+   * @description This option allows injecting dependencies into {@linkcode FreshContext.state}.
    */
   state: TState;
 
   /**
-   * @description Optionally, the {@linkcode Manifest} object which is exported from `fresh.gen.ts` can be set to this option. If this option is specified, some properties, such as {@linkcode FreshContext.params}, is automatically inferred from {@linkcode Request.url}.
+   * @description Optionally, the {@linkcode Manifest} object which is exported from `fresh.gen.ts` can be set to this option. If this option is specified, some properties, such as {@linkcode FreshContext.params}, are automatically inferred from {@linkcode Request.url}.
    */
   manifest: Manifest;
 
@@ -51,12 +51,12 @@ export interface CreateFreshContextOptions<
   config: FreshConfig;
 
   /**
-   * @description This options allows overriding `ctx.localAddr`. If not specified, `ctx.localAddr` is automatically inferred from {@linkcode Request.url}.
+   * @description This options allows overriding {@linkcode FreshContext.localAddr}. If not specified, {@linkcode FreshContext.localAddr} is automatically inferred from {@linkcode Request.url}.
    */
   localAddr: Deno.NetAddr;
 
   /**
-   * @description This options allows overriding `ctx.remoteAddr`.
+   * @description This options allows overriding {@linkcode FreshContext.remoteAddr}.
    */
   remoteAddr: Deno.NetAddr;
 
