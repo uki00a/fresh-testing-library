@@ -2,37 +2,38 @@
 // This file SHOULD be checked into source version control.
 // This file is automatically updated during development when running `dev.ts`.
 
-import * as $0 from "./routes/(admin)/dashboard.tsx";
-import * as $1 from "./routes/_app.tsx";
-import * as $2 from "./routes/_middleware.ts";
-import * as $3 from "./routes/api/users/[id].ts";
-import * as $4 from "./routes/docs/[...path].tsx";
-import * as $5 from "./routes/docs/_layout.tsx";
-import * as $6 from "./routes/index.tsx";
-import * as $7 from "./routes/users/[id].tsx";
-import * as $8 from "./routes/users/_layout.tsx";
-import * as $9 from "./routes/users/_middleware.ts";
-import * as $10 from "./routes/users/index.tsx";
-import * as $$0 from "./islands/Counter.tsx";
+import * as $_admin_dashboard from "./routes/(admin)/dashboard.tsx";
+import * as $_app from "./routes/_app.tsx";
+import * as $_middleware from "./routes/_middleware.ts";
+import * as $api_users_id_ from "./routes/api/users/[id].ts";
+import * as $docs_path_ from "./routes/docs/[...path].tsx";
+import * as $docs_layout from "./routes/docs/_layout.tsx";
+import * as $index from "./routes/index.tsx";
+import * as $users_id_ from "./routes/users/[id].tsx";
+import * as $users_layout from "./routes/users/_layout.tsx";
+import * as $users_middleware from "./routes/users/_middleware.ts";
+import * as $users_index from "./routes/users/index.tsx";
+import * as $Counter from "./islands/Counter.tsx";
+import { type Manifest } from "$fresh/server.ts";
 
 const manifest = {
   routes: {
-    "./routes/(admin)/dashboard.tsx": $0,
-    "./routes/_app.tsx": $1,
-    "./routes/_middleware.ts": $2,
-    "./routes/api/users/[id].ts": $3,
-    "./routes/docs/[...path].tsx": $4,
-    "./routes/docs/_layout.tsx": $5,
-    "./routes/index.tsx": $6,
-    "./routes/users/[id].tsx": $7,
-    "./routes/users/_layout.tsx": $8,
-    "./routes/users/_middleware.ts": $9,
-    "./routes/users/index.tsx": $10,
+    "./routes/(admin)/dashboard.tsx": $_admin_dashboard,
+    "./routes/_app.tsx": $_app,
+    "./routes/_middleware.ts": $_middleware,
+    "./routes/api/users/[id].ts": $api_users_id_,
+    "./routes/docs/[...path].tsx": $docs_path_,
+    "./routes/docs/_layout.tsx": $docs_layout,
+    "./routes/index.tsx": $index,
+    "./routes/users/[id].tsx": $users_id_,
+    "./routes/users/_layout.tsx": $users_layout,
+    "./routes/users/_middleware.ts": $users_middleware,
+    "./routes/users/index.tsx": $users_index,
   },
   islands: {
-    "./islands/Counter.tsx": $$0,
+    "./islands/Counter.tsx": $Counter,
   },
   baseUrl: import.meta.url,
-};
+} satisfies Manifest;
 
 export default manifest;

@@ -100,10 +100,10 @@ Deno.test("expect", () => {
 
 ### Testing fresh middlewares
 
-You can test fresh middlewares using `createMiddlewareHandlerContext` API:
+You can test fresh middlewares using `createFreshContext()` API:
 
 ```ts
-import { createMiddlewareHandlerContext } from "$fresh-testing-library/server.ts";
+import { createFreshContext } from "$fresh-testing-library/server.ts";
 import { assert } from "$std/assert/assert.ts";
 import { assertEquals } from "$std/assert/assert_equals.ts";
 import { describe, it } from "$std/testing/bdd.ts";
@@ -122,7 +122,7 @@ describe("createLoggerMiddleware", () => {
     const middleware = createLoggerMiddleware(testingLogger);
     const path = `/api/users/123`;
     const req = new Request(`http://localhost:3000${path}`);
-    const ctx = createMiddlewareHandlerContext(req, { manifest });
+    const ctx = createFreshContext(req, { manifest });
     await middleware(req, ctx);
     assertEquals(messages, [
       `<-- GET ${path}`,
@@ -134,10 +134,10 @@ describe("createLoggerMiddleware", () => {
 
 ### Testing fresh handlers
 
-You can test fresh handlers using `createHandlerContext` API:
+You can also test fresh handlers using `createFreshContext()` API:
 
 ```ts
-import { createHandlerContext } from "$fresh-testing-library/server.ts";
+import { createFreshContext } from "$fresh-testing-library/server.ts";
 
 import { assert } from "$std/assert/assert.ts";
 import { assertEquals } from "$std/assert/assert_equals.ts";
@@ -151,7 +151,7 @@ describe("handler.GET", () => {
     assert(handler.GET);
 
     const req = new Request("http://localhost:8000/api/users/1");
-    const ctx = createHandlerContext(req, { manifest });
+    const ctx = createFreshContext(req, { manifest });
     assertEquals(ctx.params, { id: "1" });
 
     const res = await handler.GET(req, ctx);
@@ -163,7 +163,7 @@ describe("handler.GET", () => {
 
 ### Testing async route components
 
-You can test async route components by combining `createRouteContext()` and
+You can test async route components by combining `createFreshContext()` and
 `render()`:
 
 ```ts
@@ -173,7 +173,7 @@ import {
   render,
   setup,
 } from "$fresh-testing-library/components.ts";
-import { createRouteContext } from "$fresh-testing-library/server.ts";
+import { createFreshContext } from "$fresh-testing-library/server.ts";
 import { assertExists } from "$std/assert/assert_exists.ts";
 import { afterEach, beforeAll, describe, it } from "$std/testing/bdd.ts";
 import { default as UserDetail } from "./demo/routes/users/[id].tsx";
@@ -187,7 +187,7 @@ describe("routes/users/[id].tsx", () => {
   it("should work", async () => {
     const req = new Request("http://localhost:8000/users/2");
     const state = { users: createInMemoryUsers() };
-    const ctx = createRouteContext<void, typeof state>(req, {
+    const ctx = createFreshContext<void, typeof state>(req, {
       manifest,
       // It is possible to inject dependencies into `ctx.state` with `state` option.
       state,
@@ -205,7 +205,7 @@ This library provides submodules so that only necessary functions can be
 imported.
 
 ```ts
-import { createHandlerContext } from "$fresh-testing-library/server.ts";
+import { createFreshContext } from "$fresh-testing-library/server.ts";
 
 import {
   cleanup,

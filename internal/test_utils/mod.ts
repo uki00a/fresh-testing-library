@@ -1,8 +1,4 @@
-import type {
-  HandlerContext,
-  MiddlewareHandlerContext,
-  RouteContext,
-} from "$fresh/server.ts";
+import type { FreshContext, RouteContext } from "$fresh/server.ts";
 
 import { assert } from "$std/assert/assert.ts";
 import { assertEquals } from "$std/assert/assert_equals.ts";
@@ -16,7 +12,7 @@ export async function loadManifest() {
 }
 
 export function assertContextHasDefaultServerInfo(
-  ctx: HandlerContext | MiddlewareHandlerContext | RouteContext,
+  ctx: FreshContext | RouteContext,
 ) {
   assert(ctx.localAddr);
   assert(ctx.localAddr.transport === "tcp");
@@ -28,7 +24,7 @@ export function assertContextHasDefaultServerInfo(
 }
 
 export function assertContextHasServerInfoForRequest(
-  ctx: HandlerContext | MiddlewareHandlerContext | RouteContext,
+  ctx: FreshContext | RouteContext,
   req: Request,
 ) {
   const url = new URL(req.url);

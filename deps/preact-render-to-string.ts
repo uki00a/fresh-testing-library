@@ -4,6 +4,6 @@
  * TODO(uki00a): I'd like to automate the synchronization of `preact-render-to-string` versions.
  *
  * {@link https://github.com/denoland/fresh/pull/1684}
- * {@link https://github.com/denoland/fresh/blob/5de34aac93a0090d85d6cd449c413b97a98f018e/src/server/deps.ts#L23}
+ * {@link https://github.com/denoland/fresh/blob/1.6.0/src/server/deps.ts#L25}
  */
-export { render } from "https://esm.sh/*preact-render-to-string@6.2.2";
+export { render } from "https://esm.sh/*preact-render-to-string@6.3.1";
