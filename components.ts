@@ -12,16 +12,6 @@ export * from "./deps/testing-library.ts";
 import type { Options } from "./deps/testing-library.ts";
 import { userEvent } from "./deps/testing-library.ts";
 
-import vm from "node:vm";
-
-function createJSDOM() {
-  const isContext = vm.isContext;
-  vm.isContext = () => false;
-  const jsdom = new JSDOM();
-  vm.isContext = isContext;
-  return jsdom;
-}
-
 /**
  * This function sets up the DOM environment to make Testing Library work.
  *
@@ -30,7 +20,7 @@ function createJSDOM() {
 export function setup() {
   if (globalThis.document) return;
 
-  const jsdom = createJSDOM();
+  const jsdom = new JSDOM();
   const { document } = jsdom.window;
   globalThis.document = document;
   setUpClipboard();
