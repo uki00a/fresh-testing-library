@@ -5,12 +5,23 @@
  *
  * @module
  */
+import { options } from "preact";
 import { JSDOM } from "./deps/jsdom.ts";
 import { setUpClipboard } from "./deps/jest-clipboard.ts";
 
 export * from "./deps/testing-library.ts";
+import { cleanup as _cleanup } from "./deps/testing-library.ts";
 import type { Options } from "./deps/testing-library.ts";
 import { userEvent } from "./deps/testing-library.ts";
+
+import { createVnodeHook } from "./internal/fresh/preact.ts";
+
+let cleanupVnodeHook: (() => void) | undefined = undefined;
+
+export function cleanup(): void {
+  _cleanup();
+  cleanupVnodeHook?.();
+}
 
 /**
  * This function sets up the DOM environment to make Testing Library work.
@@ -19,12 +30,19 @@ import { userEvent } from "./deps/testing-library.ts";
  */
 export function setup() {
   if (globalThis.document) return;
+  setupDocument();
+  setUpClipboard();
+  setupUserEvent();
+  setupPreactOptionsHooks();
+}
 
+function setupDocument(): void {
   const jsdom = new JSDOM();
   const { document } = jsdom.window;
   globalThis.document = document;
-  setUpClipboard();
+}
 
+function setupUserEvent(): void {
   /**
    * NOTE: Workaround for the problem of `globalThis.document` not being set at the time of loading `@testing-library/user-event`.
    * TODO: Need a better solution to this problem.
@@ -40,4 +58,10 @@ export function setup() {
       });
     },
   });
+}
+
+function setupPreactOptionsHooks(): void {
+  const { cleanup, vnode } = createVnodeHook(options.vnode);
+  options.vnode = vnode;
+  cleanupVnodeHook = cleanup;
 }

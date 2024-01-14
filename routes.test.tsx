@@ -1,12 +1,10 @@
-import {
-  createFreshContext,
-  createRouteContext,
-} from "$fresh-testing-library/server.ts";
+import { createFreshContext } from "$fresh-testing-library/server.ts";
 import {
   cleanup,
   getByText,
   render,
   setup,
+  userEvent,
 } from "$fresh-testing-library/components.ts";
 import { assert } from "$std/assert/assert.ts";
 import { assertEquals } from "$std/assert/assert_equals.ts";
@@ -18,6 +16,7 @@ import { default as manifest } from "./demo/fresh.gen.ts";
 import type { Data } from "./demo/routes/(admin)/dashboard.tsx";
 import { handler } from "./demo/routes/(admin)/dashboard.tsx";
 import { createInMemoryUsers } from "./demo/services/users.ts";
+import DocPage from "./demo/routes/docs/[...path].tsx";
 
 describe("routes testing", () => {
   beforeAll(setup);
@@ -57,5 +56,29 @@ describe("routes testing", () => {
     assertEquals($dd.length, 2);
     assertEquals($dd.eq(0).text(), "123");
     assertEquals($dd.eq(1).text(), "45");
+  });
+
+  it("supports `<Partial>`", async () => {
+    const data = {
+      content: `
+    <h2>foobar</h2>
+    <div f-client-nav="false">
+      <a href="/docs/this-should-be-ignored">
+        Client-side navigation should be disabled for this link.
+      </a>
+    </div>
+    <div f-client-nav>
+      <a href="/docs/permissions">
+        This is a link.
+      </a>
+    </div>`,
+    };
+    const ctx = createFreshContext({
+      manifest,
+      data,
+    });
+    const screen = render(<DocPage {...ctx} />);
+    const user = userEvent.setup();
+    await user.click(screen.getByText("This is a link."));
   });
 });
