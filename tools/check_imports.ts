@@ -97,6 +97,7 @@ function isRelative(specifier: string): boolean {
 try {
   await checkImports();
 } catch (error) {
+  // deno-lint-ignore no-console -- This is intended.
   console.error(error);
   Deno.exit(1);
 }
