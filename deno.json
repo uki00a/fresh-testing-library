@@ -28,8 +28,7 @@
     "$fresh-testing-library": "./mod.ts",
     "$fresh-testing-library/": "./",
     "$gfm": "https://deno.land/x/gfm@0.2.5/mod.ts",
-    "msw": "npm:msw@2.0.8",
-    "msw/node": "npm:msw@2.0.8/node"
+    "msw": "npm:msw@2.0.8"
   },
   "compilerOptions": { "jsx": "react-jsx", "jsxImportSource": "preact" },
   "lint": { "rules": { "tags": ["fresh", "recommended"] } }

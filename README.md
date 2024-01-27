@@ -224,14 +224,13 @@ import { expect } from "$fresh-testing-library/expect.ts";
 By combining [MSW](https://github.com/mswjs/msw) and `--location` flag, you can
 test a component which calls `fetch()` with a relative URL.
 
-First, add the following lines to `deno.json`:
+First, add the following setting to `deno.json`:
 
 ```jsonc
 {
   "imports": {
-    // Add the following lines:
-    "msw": "npm:msw@2.0.8",
-    "msw/node": "npm:msw@2.0.8/node"
+    // Add the following line:
+    "msw": "npm:msw@2.0.8"
   }
 }
 ```
