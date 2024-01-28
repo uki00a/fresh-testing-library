@@ -15,6 +15,7 @@ import type { Options } from "./deps/testing-library.ts";
 import { userEvent } from "./deps/testing-library.ts";
 
 import { createVnodeHook } from "./internal/fresh/preact.ts";
+import type { Manifest } from "$fresh/server.ts";
 
 let cleanupVnodeHook: (() => void) | undefined = undefined;
 
@@ -23,17 +24,21 @@ export function cleanup(): void {
   cleanupVnodeHook?.();
 }
 
+interface SetupOptions {
+  manifest?: Manifest;
+}
+
 /**
  * This function sets up the DOM environment to make Testing Library work.
  *
  * This function must be called at least once before using various APIs of Testing Library.
  */
-export function setup() {
+export function setup(options?: SetupOptions) {
   if (globalThis.document) return;
   setupDocument();
   setUpClipboard();
   setupUserEvent();
-  setupPreactOptionsHooks();
+  setupPreactOptionsHooks(options?.manifest);
 }
 
 function setupDocument(): void {
@@ -60,8 +65,8 @@ function setupUserEvent(): void {
   });
 }
 
-function setupPreactOptionsHooks(): void {
-  const { cleanup, vnode } = createVnodeHook(options.vnode);
+function setupPreactOptionsHooks(manifest?: Manifest): void {
+  const { cleanup, vnode } = createVnodeHook(options.vnode, manifest);
   options.vnode = vnode;
   cleanupVnodeHook = cleanup;
 }

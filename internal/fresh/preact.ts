@@ -1,8 +1,11 @@
 import type { PartialProps } from "$fresh/runtime.ts";
 import { Partial } from "$fresh/runtime.ts";
+import type { Manifest } from "$fresh/server.ts";
 import type { ComponentChildren } from "preact";
 import { Fragment, h, VNode } from "preact";
 import { useEffect } from "preact/hooks";
+import type { Props as ClientNavContainerProps } from "./ClientNavContainer.tsx";
+import { ClientNavContainer } from "./ClientNavContainer.tsx";
 
 interface VNodeHook {
   (vnode: VNode): void;
@@ -13,91 +16,38 @@ interface CreateVnodeHookResult {
   cleanup(): void;
 }
 
-function enablePartialNavigation(): () => void {
-  const freshClientNavContainers = document.querySelectorAll(
-    `[${kFreshClientNav}]`,
-  );
-  const events: Array<
-    [HTMLElement, string, (...args: Array<unknown>) => unknown]
-  > = [];
-
-  for (const container of freshClientNavContainers) {
-    if (container.getAttribute(kFreshClientNav) === "false") {
-      continue;
-    }
-
-    const anchors = container.querySelectorAll("a");
-    for (const anchor of anchors) {
-      if (anchor.hasAttribute(kFreshPartial)) {
-        // TODO: implement this.
-      } else {
-        const href = anchor.getAttribute("href");
-        if (href == null) {
-          continue;
-        }
-
-        const kClick = "click";
-        const onClick = (): void => {
-          console.info("hello");
-          return;
-        };
-        anchor.addEventListener(kClick, onClick);
-        events.push([anchor, kClick, onClick]);
-      }
-    }
-  }
-
-  function cleanup(): void {
-    for (const [element, event, listener] of events) {
-      element.removeEventListener(event, listener);
-    }
-  }
-
-  return cleanup;
-}
-
-interface PartialDetectorProps {
-  children?: ComponentChildren;
-}
-
 const kFreshClientNav = "f-client-nav";
-const kFreshPartial = "f-partial";
-function PartialDetector(props: PartialDetectorProps) {
-  useEffect(() => {
-    const cleanup = enablePartialNavigation();
-    return cleanup;
-  }, []);
-
-  return h(Fragment, null, props.children);
-}
 
 export function createVnodeHook(
-  maybePrviousHook: VNodeHook | undefined,
+  next: VNodeHook | undefined,
+  manifest?: Manifest,
 ): CreateVnodeHookResult {
   const encounteredPartialNames = new Set<string>();
-  let partialDetectorEnabled = false;
   function vnode(vnode: VNode): void {
+    if (hasFreshClientNavContainerAttr(vnode)) {
+      vnode.props.children = h(ClientNavContainer, {
+        children: vnode.props.children,
+        manifest,
+      });
+    }
     if (isPartial(vnode)) {
       encounteredPartialNames.add(vnode.props.name);
-      if (!partialDetectorEnabled) {
-        partialDetectorEnabled = true;
-        vnode.props.children = h(
-          PartialDetector,
-          { children: vnode.props.children },
-        );
-      }
     }
 
-    if (maybePrviousHook) {
-      return maybePrviousHook(vnode);
-    }
-    return;
+    return next?.(vnode);
   }
   function cleanup(): void {
     encounteredPartialNames.clear();
-    partialDetectorEnabled = false;
   }
   return { vnode, cleanup };
+}
+
+function hasFreshClientNavContainerAttr(
+  // deno-lint-ignore no-explicit-any
+  vnode: VNode<any>,
+): vnode is VNode<ClientNavContainerProps> {
+  return vnode.type !== ClientNavContainer && vnode.props[kFreshClientNav] &&
+    vnode.props.children != null;
 }
 
 function isPartial(

@@ -17,9 +17,10 @@ import type { Data } from "./demo/routes/(admin)/dashboard.tsx";
 import { handler } from "./demo/routes/(admin)/dashboard.tsx";
 import { createInMemoryUsers } from "./demo/services/users.ts";
 import DocPage from "./demo/routes/docs/[...path].tsx";
+import DocLayout from "./demo/routes/docs/_layout.tsx";
 
 describe("routes testing", () => {
-  beforeAll(setup);
+  beforeAll(() => setup({ manifest }));
   afterEach(cleanup);
 
   it("supports testing an async route component", async () => {
@@ -77,7 +78,10 @@ describe("routes testing", () => {
       manifest,
       data,
     });
-    const screen = render(<DocPage {...ctx} />);
+    const screen = render(
+      // TODO: support rendering `_app.tsx` and `_layout.tsx`.
+      <DocLayout {...ctx} Component={() => <DocPage {...ctx} />} />,
+    );
     const user = userEvent.setup();
     await user.click(screen.getByText("This is a link."));
   });

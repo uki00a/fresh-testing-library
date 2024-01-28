@@ -10,9 +10,10 @@ import { computed, signal, useSignal } from "@preact/signals";
 import { afterEach, beforeAll, describe, it } from "$std/testing/bdd.ts";
 
 import Counter from "🏝️/Counter.tsx";
+import { default as manifest } from "./demo/fresh.gen.ts";
 
 describe("$fresh-testing-library/components", () => {
-  beforeAll(setup);
+  beforeAll(() => setup({ manifest }));
   afterEach(cleanup);
 
   it("provides a thin wrapper to `@testing-library/preact` and `@testing-library/user-event`", async () => {
