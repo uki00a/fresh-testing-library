@@ -43,7 +43,7 @@ function enablePartialNavigation(
   manifest: Manifest,
 ): () => void {
   const events: Array<
-    [HTMLElement, string, (...args: Array<unknown>) => unknown]
+    [HTMLElement, string, (event: Event) => unknown]
   > = [];
 
   function addEventListener(
