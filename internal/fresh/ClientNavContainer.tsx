@@ -66,8 +66,7 @@ function enablePartialNavigation(
         continue;
       }
 
-      const kClick = "click";
-      addEventListener(anchor, kClick, (event) => {
+      addEventListener(anchor, "click", (event) => {
         // TODO: avoid using the constant URL.
         const dummyBaseURL = "http://localhost:8000";
         const request = new Request(new URL(href, dummyBaseURL));

@@ -1,9 +1,7 @@
 import type { PartialProps } from "$fresh/runtime.ts";
 import { Partial } from "$fresh/runtime.ts";
 import type { Manifest } from "$fresh/server.ts";
-import type { ComponentChildren } from "preact";
-import { Fragment, h, VNode } from "preact";
-import { useEffect } from "preact/hooks";
+import { h, VNode } from "preact";
 import type { Props as ClientNavContainerProps } from "./ClientNavContainer.tsx";
 import { ClientNavContainer } from "./ClientNavContainer.tsx";
 
