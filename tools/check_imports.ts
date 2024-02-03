@@ -51,7 +51,7 @@ async function checkImports(): Promise<void> {
   }
 }
 
-const acceptableBareSpecifiers = ["preact", "preact/"];
+const acceptableBareSpecifiers = ["preact", "preact/hooks"];
 function isAllowedSpecifier(specifier: string, referrer: string): boolean {
   if (
     specifier.startsWith("npm:") || specifier.startsWith("node:")
