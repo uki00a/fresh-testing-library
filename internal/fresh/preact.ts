@@ -19,8 +19,15 @@ interface CreateVnodeHookResult {
 
 const kFreshClientNav = "f-client-nav";
 
-function createPartialsUpdater(manifest?: Manifest): PartialsUpdater {
+interface ManifestAccessor {
+  (): Manifest | undefined;
+}
+
+function createPartialsUpdater(
+  manifestAccessor: ManifestAccessor,
+): PartialsUpdater {
   function updatePartials(event: Event, url: URL) {
+    const manifest = manifestAccessor();
     if (manifest == null) {
       // TODO: Output warnings?
       return;
@@ -45,11 +52,11 @@ function createPartialsUpdater(manifest?: Manifest): PartialsUpdater {
 
 export function createVnodeHook(
   next: VNodeHook | undefined,
+  manifestAccessor: ManifestAccessor,
   maybeLocation?: Location,
-  manifest?: Manifest,
 ): CreateVnodeHookResult {
   const encounteredPartialNames = new Set<string>();
-  const updatePartials = createPartialsUpdater(manifest);
+  const updatePartials = createPartialsUpdater(manifestAccessor);
   const origin = maybeLocation ? maybeLocation.origin : "http://localhost:8000";
   function vnode(vnode: VNode): void {
     if (hasFreshClientNavContainerAttr(vnode)) {

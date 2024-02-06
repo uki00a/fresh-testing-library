@@ -18,6 +18,10 @@ import { createVnodeHook } from "./internal/fresh/preact.ts";
 import type { Manifest } from "$fresh/server.ts";
 
 let cleanupVnodeHook: (() => void) | undefined = undefined;
+interface ManifestHolder {
+  manifest?: Manifest;
+}
+const manifestHolder: ManifestHolder = {};
 
 export function cleanup(): void {
   _cleanup();
@@ -34,11 +38,19 @@ interface SetupOptions {
  * This function must be called at least once before using various APIs of Testing Library.
  */
 export function setup(options?: SetupOptions) {
+  if (options?.manifest) {
+    manifestHolder.manifest = options.manifest;
+  }
+
+  setupDOMEnvironmentOnce();
+  setupPreactOptionsHooksOnce(location);
+}
+
+function setupDOMEnvironmentOnce(): void {
   if (globalThis.document) return;
   setupDocument();
   setUpClipboard();
   setupUserEvent();
-  setupPreactOptionsHooks(location, options?.manifest);
 }
 
 function setupDocument(): void {
@@ -65,11 +77,16 @@ function setupUserEvent(): void {
   });
 }
 
-function setupPreactOptionsHooks(
+function setupPreactOptionsHooksOnce(
   location?: Location,
-  manifest?: Manifest,
 ): void {
-  const { cleanup, vnode } = createVnodeHook(options.vnode, location, manifest);
+  if (cleanupVnodeHook) return;
+
+  const { cleanup, vnode } = createVnodeHook(
+    options.vnode,
+    () => manifestHolder.manifest,
+    location,
+  );
   options.vnode = vnode;
   cleanupVnodeHook = cleanup;
 }
