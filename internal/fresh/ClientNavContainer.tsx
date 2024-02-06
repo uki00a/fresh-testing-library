@@ -1,15 +1,16 @@
 import type { ComponentChildren } from "preact";
 import { cloneElement, Fragment, h, isValidElement } from "preact";
 import { useEffect, useRef } from "preact/hooks";
-import type { Manifest } from "$fresh/server.ts";
-// TODO: Don't import this from `./mod.ts`.
-import { findMatchingRouteAndPathPatternFromManifest } from "./mod.ts";
 
 const kFreshPartial = "f-partial";
 
+export interface PartialsUpdater {
+  (event: Event, url: URL): unknown;
+}
+
 export interface Props {
   children: ComponentChildren;
-  manifest?: Manifest;
+  updatePartials: PartialsUpdater;
 }
 
 export function ClientNavContainer(props: Props) {
@@ -18,12 +19,8 @@ export function ClientNavContainer(props: Props) {
     if (containerRef.current == null) {
       return;
     }
-    if (props.manifest == null) {
-      // TODO: output warnings?
-      return;
-    }
-    return enablePartialNavigation(containerRef.current, props.manifest);
-  }, [props.manifest]);
+    return enablePartialNavigation(containerRef.current, props.updatePartials);
+  }, [props.updatePartials]);
 
   return h(
     Fragment,
@@ -40,7 +37,7 @@ export function ClientNavContainer(props: Props) {
 
 function enablePartialNavigation(
   container: HTMLElement,
-  manifest: Manifest,
+  updatePartials: PartialsUpdater,
 ): () => void {
   const events: Array<
     [HTMLElement, string, (event: Event) => unknown]
@@ -69,17 +66,8 @@ function enablePartialNavigation(
       addEventListener(anchor, "click", (event) => {
         // TODO: avoid using the constant URL.
         const dummyBaseURL = "http://localhost:8000";
-        const request = new Request(new URL(href, dummyBaseURL));
-        const maybeRouteAndPattern =
-          findMatchingRouteAndPathPatternFromManifest(request, manifest);
-        if (maybeRouteAndPattern == null) {
-          return;
-        }
-
-        event.preventDefault();
-        const [_route] = maybeRouteAndPattern;
-        // TODO: implement route handling.
-        return;
+        const url = new URL(href, dummyBaseURL);
+        updatePartials(event, url);
       });
     }
   }
