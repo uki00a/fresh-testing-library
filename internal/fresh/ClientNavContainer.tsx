@@ -11,6 +11,7 @@ export interface PartialsUpdater {
 export interface Props {
   children: ComponentChildren;
   updatePartials: PartialsUpdater;
+  origin: string;
 }
 
 export function ClientNavContainer(props: Props) {
@@ -19,8 +20,12 @@ export function ClientNavContainer(props: Props) {
     if (containerRef.current == null) {
       return;
     }
-    return enablePartialNavigation(containerRef.current, props.updatePartials);
-  }, [props.updatePartials]);
+    return enablePartialNavigation(
+      containerRef.current,
+      props.origin,
+      props.updatePartials,
+    );
+  }, [props.updatePartials, props.origin]);
 
   return h(
     Fragment,
@@ -37,6 +42,7 @@ export function ClientNavContainer(props: Props) {
 
 function enablePartialNavigation(
   container: HTMLElement,
+  origin: string,
   updatePartials: PartialsUpdater,
 ): () => void {
   const events: Array<
@@ -64,9 +70,7 @@ function enablePartialNavigation(
       }
 
       addEventListener(anchor, "click", (event) => {
-        // TODO: avoid using the constant URL.
-        const dummyBaseURL = "http://localhost:8000";
-        const url = new URL(href, dummyBaseURL);
+        const url = new URL(href, origin);
         updatePartials(event, url);
       });
     }

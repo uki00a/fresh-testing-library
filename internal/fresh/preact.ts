@@ -45,15 +45,18 @@ function createPartialsUpdater(manifest?: Manifest): PartialsUpdater {
 
 export function createVnodeHook(
   next: VNodeHook | undefined,
+  maybeLocation?: Location,
   manifest?: Manifest,
 ): CreateVnodeHookResult {
   const encounteredPartialNames = new Set<string>();
   const updatePartials = createPartialsUpdater(manifest);
+  const origin = maybeLocation ? maybeLocation.origin : "http://localhost:8000";
   function vnode(vnode: VNode): void {
     if (hasFreshClientNavContainerAttr(vnode)) {
       vnode.props.children = h(ClientNavContainer, {
         children: vnode.props.children,
         updatePartials,
+        origin,
       });
     }
     if (isPartial(vnode)) {

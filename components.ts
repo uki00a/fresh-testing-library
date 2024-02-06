@@ -38,7 +38,7 @@ export function setup(options?: SetupOptions) {
   setupDocument();
   setUpClipboard();
   setupUserEvent();
-  setupPreactOptionsHooks(options?.manifest);
+  setupPreactOptionsHooks(location, options?.manifest);
 }
 
 function setupDocument(): void {
@@ -65,8 +65,11 @@ function setupUserEvent(): void {
   });
 }
 
-function setupPreactOptionsHooks(manifest?: Manifest): void {
-  const { cleanup, vnode } = createVnodeHook(options.vnode, manifest);
+function setupPreactOptionsHooks(
+  location?: Location,
+  manifest?: Manifest,
+): void {
+  const { cleanup, vnode } = createVnodeHook(options.vnode, location, manifest);
   options.vnode = vnode;
   cleanupVnodeHook = cleanup;
 }
