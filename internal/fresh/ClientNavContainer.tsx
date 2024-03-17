@@ -1,11 +1,13 @@
 import type { ComponentChildren } from "preact";
 import { cloneElement, Fragment, h, isValidElement } from "preact";
 import { useEffect, useRef } from "preact/hooks";
+// TODO: stop importing `mod.ts`
+import { kFreshPartialQueryParam } from "./mod.ts";
 
 const kFreshPartial = "f-partial";
 
 export interface PartialsUpdater {
-  (event: Event, url: URL): unknown;
+  (event: Event, request: Request): Promise<unknown>;
 }
 
 export interface Props {
@@ -71,7 +73,9 @@ function enablePartialNavigation(
 
       addEventListener(anchor, "click", (event) => {
         const url = new URL(href, origin);
-        updatePartials(event, url);
+        url.searchParams.set(kFreshPartialQueryParam, "true");
+        const request = new Request(url);
+        updatePartials(event, request);
       });
     }
   }

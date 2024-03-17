@@ -11,6 +11,7 @@ import {
   findMatchingRouteAndPathPatternFromManifest,
   isRouteModule,
   isSyncRouteComponent,
+  kFreshPartialQueryParam,
   renderAsyncRouteComponent,
   renderSyncRouteComponent,
 } from "./mod.ts";
@@ -201,10 +202,7 @@ export function createFreshContext<
   const { basePath } = config;
   const render = createRender();
   const ctx: FreshContext<TState, TData> = {
-    /**
-     * TODO: support `isPartial`.
-     */
-    isPartial: false,
+    isPartial: url.searchParams.has(kFreshPartialQueryParam),
     config,
     basePath,
     url,

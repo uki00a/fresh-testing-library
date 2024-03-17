@@ -1,12 +1,12 @@
 import type { PartialProps } from "$fresh/runtime.ts";
 import { Partial } from "$fresh/runtime.ts";
 import type { Manifest } from "$fresh/server.ts";
-import { h, VNode } from "preact";
+import { createHandler } from "$fresh/server.ts";
+import type { VNode } from "preact";
+import { h } from "preact";
 import type { Props as ClientNavContainerProps } from "./ClientNavContainer.tsx";
 import type { PartialsUpdater } from "./ClientNavContainer.tsx";
 import { ClientNavContainer } from "./ClientNavContainer.tsx";
-// TODO: Don't import this from `./mod.ts`.
-import { findMatchingRouteAndPathPatternFromManifest } from "./mod.ts";
 
 interface VNodeHook {
   (vnode: VNode): void;
@@ -23,30 +23,35 @@ interface ManifestAccessor {
   (): Manifest | undefined;
 }
 
+interface FreshHandler {
+  (request: Request): Promise<Response>;
+}
+
 function createPartialsUpdater(
   manifestAccessor: ManifestAccessor,
 ): PartialsUpdater {
-  function updatePartials(event: Event, url: URL) {
+  async function updatePartials(event: Event, request: Request): Promise<void> {
     const manifest = manifestAccessor();
     if (manifest == null) {
       // TODO: Output warnings?
       return;
     }
-    const request = new Request(url);
-    const maybeRouteAndPattern = findMatchingRouteAndPathPatternFromManifest(
-      request,
-      manifest,
-    );
-    if (maybeRouteAndPattern == null) {
-      // TODO: Output warnings?
-      return;
-    }
 
     event.preventDefault();
-    const [_route] = maybeRouteAndPattern;
-    // TODO: implement route handling.
+
+    const handler = await createFreshHandler(manifest);
+    const response = await handler(request);
+    const html = await response.text();
+    // TODO: update the current document based on `html`
     return;
   }
+
+  let handler: FreshHandler | undefined = undefined;
+  async function createFreshHandler(manifest: Manifest): Promise<FreshHandler> {
+    handler ||= await createHandler(manifest);
+    return handler;
+  }
+
   return updatePartials;
 }
 
@@ -55,6 +60,7 @@ export function createVnodeHook(
   manifestAccessor: ManifestAccessor,
   maybeLocation?: Location,
 ): CreateVnodeHookResult {
+  // TODO: Remove this
   const encounteredPartialNames = new Set<string>();
   const updatePartials = createPartialsUpdater(manifestAccessor);
   const origin = maybeLocation ? maybeLocation.origin : "http://localhost:8000";
