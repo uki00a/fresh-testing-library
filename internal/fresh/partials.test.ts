@@ -1,7 +1,21 @@
 import { assertNotStrictEquals } from "$std/assert/assert_not_strict_equals.ts";
 import { assertStrictEquals } from "$std/assert/assert_strict_equals.ts";
-import { extractPartialBoundaries } from "./partials.ts";
+import {
+  createPartialMarkerComment,
+  extractPartialBoundaries,
+} from "./partials.ts";
 import { createDocument } from "../jsdom/mod.ts";
+
+Deno.test("createPartialMarkerComment", () => {
+  assertStrictEquals(
+    createPartialMarkerComment({ name: "counter", index: 0 }),
+    "frsh-partial:counter:0:",
+  );
+  assertStrictEquals(
+    createPartialMarkerComment({ name: "snackbar", index: 0, endMarker: true }),
+    "/frsh-partial:snackbar:0:",
+  );
+});
 
 Deno.test("extractPartialBoundaries", () => {
   const document = createDocument(`

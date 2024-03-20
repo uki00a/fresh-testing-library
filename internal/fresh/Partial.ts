@@ -2,6 +2,7 @@ import { Fragment, h } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 import type { PartialProps } from "$fresh/src/runtime/Partial.tsx";
 import { createPartialMarkerComment } from "./partials.ts";
+import { assert } from "../assert/mod.ts";
 
 interface Props extends PartialProps {
   isCSR: boolean;
@@ -47,6 +48,8 @@ function Comment({ comment, disposition }: CommentProps) {
     const parent = noscript.parentNode;
     if (parent == null) return;
 
+    const comment = noscript.getAttribute("data-comment");
+    assert(comment, "`data-comment` is missing");
     const commentNode = noscript.ownerDocument.createComment(comment);
     switch (disposition) {
       case "before":
