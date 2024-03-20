@@ -88,12 +88,13 @@ describe("routes testing", () => {
 
     expect(screen.getByRole("link", { name: partialLinkText })).toBeVisible();
 
-    const expectedText = 'This module does not require any permissions.';
+    const expectedText = "This module does not require any permissions.";
     expect(screen.queryByText(expectedText)).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("link", { name: "Permissions" }));
 
     expect(await screen.findByText(expectedText)).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: partialLinkText })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: partialLinkText })).not
+      .toBeInTheDocument();
   });
 });
