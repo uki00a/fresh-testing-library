@@ -23,6 +23,7 @@ import type {
 } from "./deps/testing-library.ts";
 import { userEvent } from "./deps/testing-library.ts";
 
+import { createPartialsUpdater } from "./internal/fresh/partials.ts";
 import { createVnodeHook } from "./internal/fresh/preact.ts";
 import { createDocument } from "./internal/jsdom/mod.ts";
 import type { Manifest } from "$fresh/server.ts";
@@ -110,11 +111,14 @@ function setupPreactOptionsHooksOnce(
 ): void {
   if (cleanupVnodeHook) return;
 
+  const manifestAccessor = () => manifestHolder.manifest;
   const { cleanup, vnode } = createVnodeHook(
     options.vnode,
-    () => manifestHolder.manifest,
+    createPartialsUpdater(
+      manifestAccessor,
+      document,
+    ),
     isCSR,
-    document,
     location,
   );
   options.vnode = vnode;

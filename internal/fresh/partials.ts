@@ -1,5 +1,9 @@
 /// <reference lib="dom" />
 
+import type { Manifest } from "$fresh/server.ts";
+import { createHandler } from "$fresh/server.ts";
+import { createDocument } from "../jsdom/mod.ts";
+
 export const kFreshPartialQueryParam = "fresh-partial";
 
 export interface PartialsUpdater {
@@ -156,4 +160,74 @@ export function enablePartialNavigation(
   }
 
   return cleanup;
+}
+
+interface ManifestAccessor {
+  (): Manifest | undefined;
+}
+
+interface FreshHandler {
+  (request: Request): Promise<Response>;
+}
+
+export function createPartialsUpdater(
+  manifestAccessor: ManifestAccessor,
+  baseDocument: Document,
+): PartialsUpdater {
+  async function updatePartials(event: Event, request: Request): Promise<void> {
+    const manifest = manifestAccessor();
+    if (manifest == null) {
+      // TODO: Output warnings?
+      return;
+    }
+
+    event.preventDefault();
+
+    const handler = await createFreshHandler(manifest);
+    const response = await handler(request);
+    const html = await response.text();
+    const newDocument = createDocument(html);
+    const newPartialBoundaries = extractPartialBoundaries(newDocument);
+    if (newPartialBoundaries.length === 0) {
+      return;
+    }
+    const currentPartialBoundaries = extractPartialBoundaries(baseDocument);
+    for (const newBoundary of newPartialBoundaries) {
+      const currentBoundary = currentPartialBoundaries.find((x) =>
+        x.name === newBoundary.name && x.index === newBoundary.index
+      );
+      if (currentBoundary == null) continue;
+
+      const parent = currentBoundary.start.parentNode;
+      if (parent == null) continue;
+
+      // TODO: support `PartialProps.mode`
+      let it = currentBoundary.start.nextSibling;
+      while (it !== currentBoundary.end) {
+        if (it == null) break;
+        const toRemove = it;
+        parent.removeChild(toRemove);
+        it = it.nextSibling;
+      }
+
+      const fragment = baseDocument.createDocumentFragment();
+      it = newBoundary.start.nextSibling;
+      while (it !== newBoundary.end) {
+        if (it == null) break;
+        const copy = baseDocument.importNode(it, true);
+        fragment.appendChild(copy);
+        it = it.nextSibling;
+      }
+      parent.insertBefore(fragment, currentBoundary.end);
+    }
+    return;
+  }
+
+  let handler: FreshHandler | undefined = undefined;
+  async function createFreshHandler(manifest: Manifest): Promise<FreshHandler> {
+    handler ||= await createHandler(manifest);
+    return handler;
+  }
+
+  return updatePartials;
 }
