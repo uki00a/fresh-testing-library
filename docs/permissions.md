@@ -4,8 +4,8 @@
 
 This module does not require any permissions.
 
-|  Permission   | Value |                                 Description                                 |
-| :-----------: | :---: | :-------------------------------------------------------------------------: |
+| Permission | Value | Description |
+| :--------: | :---: | :---------: |
 
 ## `$fresh-testing-library/components.ts`
 
