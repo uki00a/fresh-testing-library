@@ -15,6 +15,7 @@ import {
   renderSyncRouteComponent,
 } from "./mod.ts";
 import { resolveConfig } from "./config.ts";
+import { kFreshPartialQueryParam } from "./partials.ts";
 
 /**
  * Options which can be passed to {@linkcode createFreshContext}.
@@ -201,10 +202,7 @@ export function createFreshContext<
   const { basePath } = config;
   const render = createRender();
   const ctx: FreshContext<TState, TData> = {
-    /**
-     * TODO: support `isPartial`.
-     */
-    isPartial: false,
+    isPartial: url.searchParams.has(kFreshPartialQueryParam),
     config,
     basePath,
     url,

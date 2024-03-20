@@ -1,7 +1,7 @@
 import { extname } from "node:path";
 import type { ClassAttributes, VNode } from "preact";
 import { h } from "preact";
-import { render } from "../../deps/preact-render-to-string.ts";
+import { render as renderToString } from "../../deps/preact-render-to-string.ts";
 import type {
   FreshContext,
   Manifest,
@@ -129,7 +129,7 @@ export function renderSyncRouteComponent(
   routeComponent: SyncRouteComponent,
 ) {
   const vnode = h(kContainerElement, {}, h(routeComponent, ctx));
-  const html = render(vnode);
+  const html = renderToString(vnode);
   return new Response(html, {
     headers: {
       "Content-Type": "text/html; charset=UTF-8",
@@ -154,7 +154,7 @@ export async function renderAsyncRouteComponent(
   const vnode = h(kContainerElement, {}, result) as VNode<
     ClassAttributes<HTMLElement>
   >; // TODO: remove this type casting.
-  const html = render(vnode);
+  const html = renderToString(vnode);
   return new Response(html, {
     headers: {
       "Content-Type": "text/html; charset=UTF-8",

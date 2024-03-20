@@ -6,14 +6,26 @@ import {
   userEvent,
   waitFor,
 } from "$fresh-testing-library";
+import {
+  cleanup as ptlCleanup,
+  render as ptlRender,
+} from "./deps/testing-library.ts";
 import { computed, signal, useSignal } from "@preact/signals";
 import { afterEach, beforeAll, describe, it } from "$std/testing/bdd.ts";
+import type { IsExact } from "$std/testing/types.ts";
+import { assertType } from "$std/testing/types.ts";
 
 import Counter from "🏝️/Counter.tsx";
+import { default as manifest } from "./demo/fresh.gen.ts";
 
 describe("$fresh-testing-library/components", () => {
-  beforeAll(setup);
+  beforeAll(() => setup({ manifest }));
   afterEach(cleanup);
+
+  it("provides proper type definitions", () => {
+    assertType<IsExact<typeof render, typeof ptlRender>>(true);
+    assertType<IsExact<typeof cleanup, typeof ptlCleanup>>(true);
+  });
 
   it("provides a thin wrapper to `@testing-library/preact` and `@testing-library/user-event`", async () => {
     const count = signal(9);
