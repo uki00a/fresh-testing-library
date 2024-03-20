@@ -3,6 +3,12 @@
 `fresh-testing-library` provides various utilitites to write unit/integration
 tests for fresh apps.
 
+## Features
+
+- Support testing of handlers/middlewares/islands/routes
+- Jest-compatible `expect()` API
+- Emulate Partial rendering, etc. as much as possible
+
 ## Installation
 
 At first, you need to add this library as a dependency to `deno.json` or
@@ -51,9 +57,10 @@ import { signal } from "@preact/signals";
 import { afterEach, beforeAll, describe, it } from "$std/testing/bdd.ts";
 
 import Counter from "🏝️/Counter.tsx";
+import { default as manifest } from "./demo/fresh.gen.ts";
 
 describe("islands/Counter.tsx", () => {
-  beforeAll(setup);
+  beforeAll(() => setup({ manifest }));
   afterEach(cleanup);
 
   it("should work", async () => {
@@ -181,7 +188,7 @@ import { default as manifest } from "./demo/fresh.gen.ts";
 import { createInMemoryUsers } from "./demo/services/users.ts";
 
 describe("routes/users/[id].tsx", () => {
-  beforeAll(setup);
+  beforeAll(() => setup({ manifest }));
   afterEach(cleanup);
 
   it("should work", async () => {
