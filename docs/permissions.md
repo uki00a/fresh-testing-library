@@ -6,6 +6,7 @@ This module does not require any permissions.
 
 | Permission | Value | Description |
 | :--------: | :---: | :---------: |
+| `--allow-env`  |  `*`  | This module depends on `jsdom` which requires the `--allow-env` permission.  |
 
 ## `$fresh-testing-library/components.ts`
 
