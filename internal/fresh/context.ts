@@ -15,7 +15,7 @@ import {
   renderSyncRouteComponent,
 } from "./mod.ts";
 import { resolveConfig } from "./config.ts";
-import { kFreshPartialQueryParam } from "./partials.ts";
+import { kFreshPartialQueryParam } from "./constants.ts";
 
 /**
  * Options which can be passed to {@linkcode createFreshContext}.

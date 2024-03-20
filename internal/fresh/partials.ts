@@ -4,8 +4,7 @@
 import type { Manifest } from "$fresh/server.ts";
 import { createHandler } from "$fresh/server.ts";
 import { createDocument } from "../jsdom/mod.ts";
-
-export const kFreshPartialQueryParam = "fresh-partial";
+import { kFreshPartialQueryParam } from "./constants.ts";
 
 export interface PartialsUpdater {
   (event: Event, request: Request): Promise<unknown>;
