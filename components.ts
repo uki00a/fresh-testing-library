@@ -5,16 +5,26 @@
  *
  * @module
  */
+import type { ComponentChild } from "preact";
 import { options } from "preact";
-import { JSDOM } from "./deps/jsdom.ts";
+import { AsyncLocalStorage } from "node:async_hooks";
 import { setUpClipboard } from "./deps/jest-clipboard.ts";
 
 export * from "./deps/testing-library.ts";
-import { cleanup as _cleanup } from "./deps/testing-library.ts";
-import type { Options } from "./deps/testing-library.ts";
+import {
+  cleanup as _cleanup,
+  render as _render,
+} from "./deps/testing-library.ts";
+import type {
+  Options,
+  Queries,
+  RenderOptions,
+  RenderResult,
+} from "./deps/testing-library.ts";
 import { userEvent } from "./deps/testing-library.ts";
 
 import { createVnodeHook } from "./internal/fresh/preact.ts";
+import { createDocument } from "./internal/jsdom/mod.ts";
 import type { Manifest } from "$fresh/server.ts";
 
 let cleanupVnodeHook: (() => void) | undefined = undefined;
@@ -23,9 +33,29 @@ interface ManifestHolder {
 }
 const manifestHolder: ManifestHolder = {};
 
+const asyncLocalStorage = new AsyncLocalStorage<{ isCSR: true }>();
+export function render(
+  ui: ComponentChild,
+  options?: Omit<RenderOptions, "queries">,
+): RenderResult;
+export function render<Q extends Queries>(
+  ui: ComponentChild,
+  options: RenderOptions<Q>,
+): RenderResult<Q>;
+export function render<Q extends Queries>(
+  ui: ComponentChild,
+  options?: RenderOptions<Q> | Omit<RenderOptions, "queries">,
+): RenderResult<Q> | RenderResult {
+  return asyncLocalStorage.run({ isCSR: true }, () => _render(ui, options));
+}
+
 export function cleanup(): void {
   _cleanup();
   cleanupVnodeHook?.();
+}
+
+function isCSR(): boolean {
+  return asyncLocalStorage.getStore()?.isCSR === true;
 }
 
 interface SetupOptions {
@@ -54,9 +84,7 @@ function setupDOMEnvironmentOnce(): void {
 }
 
 function setupDocument(): void {
-  const jsdom = new JSDOM();
-  const { document } = jsdom.window;
-  globalThis.document = document;
+  globalThis.document = createDocument();
 }
 
 function setupUserEvent(): void {
@@ -85,6 +113,8 @@ function setupPreactOptionsHooksOnce(
   const { cleanup, vnode } = createVnodeHook(
     options.vnode,
     () => manifestHolder.manifest,
+    isCSR,
+    document,
     location,
   );
   options.vnode = vnode;

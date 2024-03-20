@@ -1,10 +1,10 @@
 import { assertNotStrictEquals } from "$std/assert/assert_not_strict_equals.ts";
 import { assertStrictEquals } from "$std/assert/assert_strict_equals.ts";
-import { JSDOM } from "../../deps/jsdom.ts";
-import { extractPartialBoundaries } from "$fresh-testing-library/internal/fresh/partials.ts";
+import { extractPartialBoundaries } from "./partials.ts";
+import { createDocument } from "../jsdom/mod.ts";
 
 Deno.test("extractPartialBoundaries", () => {
-  const document = new JSDOM(`
+  const document = createDocument(`
 <html>
 <body>
 <h1>hello</h1>
@@ -19,7 +19,7 @@ Deno.test("extractPartialBoundaries", () => {
   <!--/frsh-partial:page:0:-->
 </main>
 </body>
-</html>`).window.document;
+</html>`);
   const boundaries = extractPartialBoundaries(document);
   assertStrictEquals(boundaries[0].name, "page");
   assertStrictEquals(boundaries[0].index, 0);

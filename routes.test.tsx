@@ -1,4 +1,4 @@
-import { createFreshContext } from "$fresh-testing-library/server.ts";
+import { createFreshContext } from "./server.ts";
 import {
   cleanup,
   getByText,
@@ -6,6 +6,7 @@ import {
   setup,
   userEvent,
 } from "$fresh-testing-library/components.ts";
+import { expect } from "$fresh-testing-library/expect.ts";
 import { assert } from "$std/assert/assert.ts";
 import { assertEquals } from "$std/assert/assert_equals.ts";
 import { assertExists } from "$std/assert/assert_exists.ts";
@@ -60,6 +61,7 @@ describe("routes testing", () => {
   });
 
   it("supports `<Partial>`", async () => {
+    const partialLinkText = "This is a partial link.";
     const data = {
       content: `
     <h2>foobar</h2>
@@ -70,7 +72,7 @@ describe("routes testing", () => {
     </div>
     <div f-client-nav>
       <a href="/docs/permissions">
-        This is a link.
+        ${partialLinkText}
       </a>
     </div>`,
     };
@@ -83,6 +85,15 @@ describe("routes testing", () => {
       <DocLayout {...ctx} Component={() => <DocPage {...ctx} />} />,
     );
     const user = userEvent.setup();
-    await user.click(screen.getByText("This is a link."));
+
+    expect(screen.getByRole("link", { name: partialLinkText })).toBeVisible();
+
+    const expectedText = 'This module does not require any permissions.';
+    expect(screen.queryByText(expectedText)).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("link", { name: "Permissions" }));
+
+    expect(await screen.findByText(expectedText)).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: partialLinkText })).not.toBeInTheDocument();
   });
 });

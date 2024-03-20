@@ -86,3 +86,18 @@ const kFreshPartialStartMarkerCommentPrefix = "frsh-partial:";
  */
 const kFreshPartialEndMarkerCommentPrefix =
   `/${kFreshPartialStartMarkerCommentPrefix}`;
+
+interface CreatePartialMarkerCommentOptions {
+  name: string;
+  index: number;
+  endMarker?: boolean;
+}
+export function createPartialMarkerComment(
+  { name, index, endMarker }: CreatePartialMarkerCommentOptions,
+): string {
+  const body = `${name}:${index}:`;
+  const prefix = endMarker
+    ? kFreshPartialEndMarkerCommentPrefix
+    : kFreshPartialStartMarkerCommentPrefix;
+  return `${prefix}${body}`;
+}

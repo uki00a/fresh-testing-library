@@ -1,12 +1,15 @@
 import type { PartialProps } from "$fresh/runtime.ts";
-import { Partial } from "$fresh/runtime.ts";
+import { Partial as FreshPartial } from "$fresh/runtime.ts";
 import type { Manifest } from "$fresh/server.ts";
 import { createHandler } from "$fresh/server.ts";
 import type { VNode } from "preact";
-import { h } from "preact";
+import { Fragment, h } from "preact";
 import type { Props as ClientNavContainerProps } from "./ClientNavContainer.tsx";
 import type { PartialsUpdater } from "./ClientNavContainer.tsx";
 import { ClientNavContainer } from "./ClientNavContainer.tsx";
+import { Partial as FTLPartial } from "./Partial.ts";
+import { extractPartialBoundaries } from "./partials.ts";
+import { createDocument } from "../jsdom/mod.ts";
 
 interface VNodeHook {
   (vnode: VNode): void;
@@ -29,6 +32,7 @@ interface FreshHandler {
 
 function createPartialsUpdater(
   manifestAccessor: ManifestAccessor,
+  baseDocument: Document,
 ): PartialsUpdater {
   async function updatePartials(event: Event, request: Request): Promise<void> {
     const manifest = manifestAccessor();
@@ -42,7 +46,40 @@ function createPartialsUpdater(
     const handler = await createFreshHandler(manifest);
     const response = await handler(request);
     const html = await response.text();
-    // TODO: update the current document based on `html`
+    const newDocument = createDocument(html);
+    const newPartialBoundaries = extractPartialBoundaries(newDocument);
+    if (newPartialBoundaries.length === 0) {
+      return;
+    }
+    const currentPartialBoundaries = extractPartialBoundaries(baseDocument);
+    for (const newBoundary of newPartialBoundaries) {
+      const currentBoundary = currentPartialBoundaries.find((x) =>
+        x.name === newBoundary.name && x.index === newBoundary.index
+      );
+      if (currentBoundary == null) continue;
+
+      const parent = currentBoundary.start.parentNode;
+      if (parent == null) continue;
+
+      // TODO: support `PartialProps.mode`
+      let it = currentBoundary.start.nextSibling;
+      while (it !== currentBoundary.end) {
+        if (it == null) break;
+        const toRemove = it;
+        parent.removeChild(toRemove);
+        it = it.nextSibling;
+      }
+
+      const fragment = baseDocument.createDocumentFragment();
+      it = newBoundary.start.nextSibling;
+      while (it !== newBoundary.end) {
+        if (it == null) break;
+        const copy = baseDocument.importNode(it, true);
+        fragment.appendChild(copy);
+        it = it.nextSibling;
+      }
+      parent.insertBefore(fragment, currentBoundary.end);
+    }
     return;
   }
 
@@ -58,11 +95,11 @@ function createPartialsUpdater(
 export function createVnodeHook(
   next: VNodeHook | undefined,
   manifestAccessor: ManifestAccessor,
+  isCSR: () => boolean,
+  document: Document,
   maybeLocation?: Location,
 ): CreateVnodeHookResult {
-  // TODO: Remove this
-  const encounteredPartialNames = new Set<string>();
-  const updatePartials = createPartialsUpdater(manifestAccessor);
+  const updatePartials = createPartialsUpdater(manifestAccessor, document);
   const origin = maybeLocation ? maybeLocation.origin : "http://localhost:8000";
   function vnode(vnode: VNode): void {
     if (hasFreshClientNavContainerAttr(vnode)) {
@@ -71,16 +108,17 @@ export function createVnodeHook(
         updatePartials,
         origin,
       });
-    }
-    if (isPartial(vnode)) {
-      encounteredPartialNames.add(vnode.props.name);
+    } else if (isPartial(vnode)) {
+      vnode.props.children = h(FTLPartial, { ...vnode.props, isCSR: isCSR() });
     }
 
     return next?.(vnode);
   }
+
   function cleanup(): void {
-    encounteredPartialNames.clear();
+    // NOOP
   }
+
   return { vnode, cleanup };
 }
 
@@ -96,5 +134,5 @@ function isPartial(
   // deno-lint-ignore no-explicit-any
   vnode: VNode<any>,
 ): vnode is VNode<PartialProps> {
-  return vnode.type === Partial;
+  return vnode.type === FreshPartial;
 }
