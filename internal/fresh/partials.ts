@@ -1,4 +1,5 @@
 /// <reference lib="dom" />
+/// <reference lib="dom.iterable" />
 
 import type { Manifest } from "$fresh/server.ts";
 import { createHandler } from "$fresh/server.ts";
@@ -127,6 +128,7 @@ export function enablePartialNavigation(
     event: string,
     listener: (event: Event) => unknown,
   ) {
+    // @ts-ignore This line is covered by the test
     element.addEventListener(event, listener);
     events.push([element, event, listener]);
   }
@@ -155,6 +157,7 @@ export function enablePartialNavigation(
 
   function cleanup(): void {
     for (const [element, event, listener] of events) {
+      // @ts-ignore This line is covered by the test
       element.removeEventListener(event, listener);
     }
   }
