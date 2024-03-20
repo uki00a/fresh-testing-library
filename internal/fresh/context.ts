@@ -11,11 +11,11 @@ import {
   findMatchingRouteAndPathPatternFromManifest,
   isRouteModule,
   isSyncRouteComponent,
-  kFreshPartialQueryParam,
   renderAsyncRouteComponent,
   renderSyncRouteComponent,
 } from "./mod.ts";
 import { resolveConfig } from "./config.ts";
+import { kFreshPartialQueryParam } from "./partials.ts";
 
 /**
  * Options which can be passed to {@linkcode createFreshContext}.

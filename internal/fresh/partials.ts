@@ -1,5 +1,11 @@
 /// <reference lib="dom" />
 
+export const kFreshPartialQueryParam = "fresh-partial";
+
+export interface PartialsUpdater {
+  (event: Event, request: Request): Promise<unknown>;
+}
+
 export interface PartialBoundary {
   name: string;
   index: number;
@@ -100,4 +106,54 @@ export function createPartialMarkerComment(
     ? kFreshPartialEndMarkerCommentPrefix
     : kFreshPartialStartMarkerCommentPrefix;
   return `${prefix}${body}`;
+}
+
+const kFreshPartial = "f-partial";
+export function enablePartialNavigation(
+  container: HTMLElement,
+  origin: string,
+  updatePartials: PartialsUpdater,
+): () => void {
+  const events: Array<
+    [HTMLElement, string, (event: Event) => unknown]
+  > = [];
+
+  function addEventListener(
+    element: HTMLElement,
+    event: string,
+    listener: (event: Event) => unknown,
+  ) {
+    element.addEventListener(event, listener);
+    events.push([element, event, listener]);
+  }
+
+  const anchors = container.querySelectorAll("a");
+  for (const anchor of anchors) {
+    if (anchor.hasAttribute(kFreshPartial)) {
+      // TODO: implement this.
+      throw new Error(`"${kFreshPartial}" is not implemented yet.`);
+    } else {
+      const href = anchor.getAttribute("href");
+      if (href == null || !href.startsWith("/")) {
+        continue;
+      }
+
+      addEventListener(anchor, "click", (event) => {
+        const url = new URL(href, origin);
+        url.searchParams.set(kFreshPartialQueryParam, "true");
+        const request = new Request(url);
+        updatePartials(event, request);
+      });
+    }
+  }
+
+  // TODO: support form partials.
+
+  function cleanup(): void {
+    for (const [element, event, listener] of events) {
+      element.removeEventListener(event, listener);
+    }
+  }
+
+  return cleanup;
 }

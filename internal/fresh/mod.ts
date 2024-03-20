@@ -14,7 +14,6 @@ import type {
 const routeExtnames = [".tsx", ".jsx", ".mts", ".ts", ".js", ".mjs"];
 const kFreshRoutePathPrefix = "./routes" as const;
 const kIndexRoute = "index" as const;
-export const kFreshPartialQueryParam = "fresh-partial";
 
 type FreshRoutePath = `${typeof kFreshRoutePathPrefix}/${string}`;
 
