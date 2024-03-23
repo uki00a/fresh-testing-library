@@ -112,7 +112,7 @@ export function createPartialMarkerComment(
   return `${prefix}${body}`;
 }
 
-const kFreshPartial = "f-partial";
+const kFreshPartialAttribute = "f-partial";
 export function enablePartialNavigation(
   container: HTMLElement,
   origin: string,
@@ -134,24 +134,21 @@ export function enablePartialNavigation(
 
   const anchors = container.querySelectorAll("a");
   for (const anchor of anchors) {
-    if (anchor.hasAttribute(kFreshPartial)) {
-      // TODO: implement this.
-      throw new Error(`"${kFreshPartial}" is not implemented yet.`);
-    } else {
-      const href = anchor.getAttribute("href");
-      if (href == null || !href.startsWith("/")) {
-        continue;
-      }
-
-      addEventListener(anchor, "click", (event) => {
-        const url = new URL(href, origin);
-        url.searchParams.set(kFreshPartialQueryParam, "true");
-        const request = new Request(url);
-        updatePartials(event, request);
-      });
+    const partial = anchor.getAttribute(kFreshPartialAttribute);
+    const href = partial ?? anchor.getAttribute("href");
+    if (href == null || !href.startsWith("/")) {
+      continue;
     }
+
+    addEventListener(anchor, "click", (event) => {
+      const url = new URL(href, origin);
+      url.searchParams.set(kFreshPartialQueryParam, "true");
+      const request = new Request(url);
+      updatePartials(event, request);
+    });
   }
 
+  // TODO: support buttons.
   // TODO: support form partials.
 
   function cleanup(): void {

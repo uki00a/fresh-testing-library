@@ -1,3 +1,4 @@
+import { Partial } from "$fresh/runtime.ts";
 import { createFreshContext } from "./server.ts";
 import {
   cleanup,
@@ -24,77 +25,111 @@ describe("routes testing", () => {
   beforeAll(() => setup({ manifest }));
   afterEach(cleanup);
 
-  it("supports testing an async route component", async () => {
-    const req = new Request("http://localhost:8000/users/2");
-    const state = { users: createInMemoryUsers() };
-    const ctx = createFreshContext<void, typeof state>(req, {
-      manifest,
-      state,
-    });
-    const screen = render(await UserDetail(req, ctx));
-    const list = screen.getByRole("group");
-    assertExists(getByText(list, "2"));
-    assertExists(getByText(list, "bar"));
-  });
-
-  it("supports testing a route component with `handler.GET`", async () => {
-    // https://github.com/uki00a/fresh-testing-library/issues/38
-    const request = new Request("http://localhost:8000/dashboard");
-    const ctx = createFreshContext<Data, Data>(
-      request,
-      {
-        state: { activeUsers: 45, totalUsers: 123 },
+  describe("routes", () => {
+    it("supports testing an async route component", async () => {
+      const req = new Request("http://localhost:8000/users/2");
+      const state = { users: createInMemoryUsers() };
+      const ctx = createFreshContext<void, typeof state>(req, {
         manifest,
-      },
-    );
-    assert(handler.GET);
-    const res = await handler.GET(request, ctx);
-    assertEquals(res.status, 200);
-    assertEquals(res.headers.get("content-type"), "text/html; charset=UTF-8");
+        state,
+      });
+      const screen = render(await UserDetail(req, ctx));
+      const list = screen.getByRole("group");
+      assertExists(getByText(list, "2"));
+      assertExists(getByText(list, "bar"));
+    });
 
-    const html = await res.text();
-    const $ = cheerio.load(html);
-    const $dd = $("dd");
-    assertEquals($dd.length, 2);
-    assertEquals($dd.eq(0).text(), "123");
-    assertEquals($dd.eq(1).text(), "45");
+    it("supports testing a route component with `handler.GET`", async () => {
+      // https://github.com/uki00a/fresh-testing-library/issues/38
+      const request = new Request("http://localhost:8000/dashboard");
+      const ctx = createFreshContext<Data, Data>(
+        request,
+        {
+          state: { activeUsers: 45, totalUsers: 123 },
+          manifest,
+        },
+      );
+      assert(handler.GET);
+      const res = await handler.GET(request, ctx);
+      assertEquals(res.status, 200);
+      assertEquals(res.headers.get("content-type"), "text/html; charset=UTF-8");
+
+      const html = await res.text();
+      const $ = cheerio.load(html);
+      const $dd = $("dd");
+      assertEquals($dd.length, 2);
+      assertEquals($dd.eq(0).text(), "123");
+      assertEquals($dd.eq(1).text(), "45");
+    });
   });
 
-  it("supports `<Partial>`", async () => {
-    const partialLinkText = "This is a partial link.";
-    const data = {
-      content: `
-    <h2>foobar</h2>
-    <div f-client-nav="false">
-      <a href="/docs/this-should-be-ignored">
-        Client-side navigation should be disabled for this link.
-      </a>
-    </div>
-    <div f-client-nav>
-      <a href="/docs/permissions">
-        ${partialLinkText}
-      </a>
-    </div>`,
-    };
-    const ctx = createFreshContext({
-      manifest,
-      data,
+  describe("partials", () => {
+    it("supports client navigation by an `<a>` tag", async () => {
+      const data = Object.freeze({
+        content: `First content`,
+      });
+      const ctx = createFreshContext({
+        manifest,
+        data,
+      });
+      const screen = render(
+        // TODO: support rendering `_app.tsx` and `_layout.tsx`.
+        <DocLayout {...ctx} Component={() => <DocPage {...ctx} />} />,
+      );
+      const user = userEvent.setup();
+
+      expect(screen.getByText(data.content)).toBeVisible();
+
+      const expectedText = "This module does not require any permissions.";
+      expect(screen.queryByText(expectedText)).not.toBeInTheDocument();
+
+      await user.click(screen.getByRole("link", { name: "Permissions" }));
+
+      expect(await screen.findByText(expectedText)).toBeInTheDocument();
+      expect(screen.queryByText(data.content)).not
+        .toBeInTheDocument();
     });
-    const screen = render(
-      // TODO: support rendering `_app.tsx` and `_layout.tsx`.
-      <DocLayout {...ctx} Component={() => <DocPage {...ctx} />} />,
-    );
-    const user = userEvent.setup();
 
-    expect(screen.getByRole("link", { name: partialLinkText })).toBeVisible();
+    it("supports `f-partial`", async () => {
+      const data = Object.freeze({
+        content: `First content`,
+      });
+      const partialLinkText = "This is a link with `f-partial`";
+      const ctx = createFreshContext({
+        manifest,
+        data,
+      });
+      const screen = render(
+        // TODO: support rendering `_app.tsx` and `_layout.tsx`.
+        <DocLayout
+          {...ctx}
+          Component={() => (
+            <>
+              {/* TODO: Set `f-client-nav` to `<nav>` instead of `<aside>` */}
+              <aside f-client-nav>
+                <nav>
+                  <a href="/docs" f-partial="/docs/permissions">
+                    {partialLinkText}
+                  </a>
+                </nav>
+              </aside>
+              <DocPage {...ctx} />
+            </>
+          )}
+        />,
+      );
+      const user = userEvent.setup();
 
-    const expectedText = "This module does not require any permissions.";
-    expect(screen.queryByText(expectedText)).not.toBeInTheDocument();
+      expect(screen.getByText(data.content)).toBeVisible();
 
-    await user.click(screen.getByRole("link", { name: "Permissions" }));
+      const expectedText = "This module does not require any permissions.";
+      expect(screen.queryByText(expectedText)).not.toBeInTheDocument();
 
-    expect(await screen.findByText(expectedText)).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: partialLinkText })).not
-      .toBeInTheDocument();
+      await user.click(screen.getByRole("link", { name: partialLinkText }));
+
+      expect(await screen.findByText(expectedText)).toBeInTheDocument();
+      expect(screen.queryByText(data.content)).not
+        .toBeInTheDocument();
+    });
   });
 });
