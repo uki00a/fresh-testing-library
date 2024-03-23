@@ -17,6 +17,7 @@ export function ClientNavContainer(props: Props) {
       return;
     }
     return enablePartialNavigation(
+      // TODO: `containerRef.current` is not a container. It's parent element should be used instead.
       containerRef.current,
       props.origin,
       props.updatePartials,

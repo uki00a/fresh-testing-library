@@ -16,7 +16,7 @@ interface CreateVnodeHookResult {
   cleanup(): void;
 }
 
-const kFreshClientNav = "f-client-nav";
+const kFreshClientNavAttribute = "f-client-nav";
 
 export function createVnodeHook(
   next: VNodeHook | undefined,
@@ -50,7 +50,8 @@ function hasFreshClientNavContainerAttr(
   // deno-lint-ignore no-explicit-any
   vnode: VNode<any>,
 ): vnode is VNode<ClientNavContainerProps> {
-  return vnode.type !== ClientNavContainer && vnode.props[kFreshClientNav] &&
+  return vnode.type !== ClientNavContainer &&
+    vnode.props[kFreshClientNavAttribute] &&
     vnode.props.children != null;
 }
 
