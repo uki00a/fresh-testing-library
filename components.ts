@@ -30,6 +30,7 @@ import {
   setDefaultManifest,
 } from "./internal/fresh/manifest.ts";
 import { createDocument } from "./internal/jsdom/mod.ts";
+// deno-lint-ignore no-unused-vars -- referenced by `@linkcode`
 import type { CreateFreshContextOptions } from "./internal/fresh/context.ts";
 import type { Manifest } from "$fresh/server.ts";
 

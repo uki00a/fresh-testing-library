@@ -195,8 +195,8 @@ describe("routes/users/[id].tsx", () => {
     const req = new Request("http://localhost:8000/users/2");
     const state = { users: createInMemoryUsers() };
     const ctx = createFreshContext<void, typeof state>(req, {
-      manifest,
-      // It is possible to inject dependencies into `ctx.state` with `state` option.
+      // NOTE: If `manifest` option was specified in `setup()`, it can be omitted here.
+      // It is also possible to inject dependencies into `ctx.state` with `state` option.
       state,
     });
     const screen = render(await UserDetail(req, ctx));
