@@ -9,6 +9,9 @@ import {
   determineRouteDestinationKind,
   extractParams,
   findMatchingRouteAndPathPatternFromManifest,
+  maybeGetDefaultManifest,
+} from "./manifest.ts";
+import {
   isRouteModule,
   isSyncRouteComponent,
   renderAsyncRouteComponent,
@@ -143,7 +146,6 @@ export function createFreshContext<
   const request: Request = requestOrOptions;
   const url = new URL(request.url);
   const {
-    manifest,
     params: _params,
     state = {} as TState,
     data = {} as TData,
@@ -156,6 +158,11 @@ export function createFreshContext<
       options?.manifest,
     ),
   } = options ?? {};
+  const manifest = options?.manifest
+    ? options.manifest
+    : (options && "manifest" in options)
+    ? undefined
+    : maybeGetDefaultManifest();
   const params = _params ?? (manifest ? extractParams(request, manifest) : {});
 
   function createRender() {
@@ -176,7 +183,6 @@ export function createFreshContext<
             return createDefaultResponse();
           }
           const renderCtx = data === undefined ? ctx : { ...ctx, data };
-
           if (isSyncRouteComponent(routeComponent)) {
             return renderSyncRouteComponent(
               renderCtx,
