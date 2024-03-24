@@ -25,15 +25,15 @@ import { userEvent } from "./deps/testing-library.ts";
 
 import { createPartialsUpdater } from "./internal/fresh/partials.ts";
 import { createVnodeHook } from "./internal/fresh/preact.ts";
+import {
+  maybeGetDefaultManifest,
+  setDefaultManifest,
+} from "./internal/fresh/manifest.ts";
 import { createDocument } from "./internal/jsdom/mod.ts";
+import type { CreateFreshContextOptions } from "./internal/fresh/context.ts";
 import type { Manifest } from "$fresh/server.ts";
 
 let cleanupVnodeHook: (() => void) | undefined = undefined;
-interface ManifestHolder {
-  manifest?: Manifest;
-}
-const manifestHolder: ManifestHolder = {};
-
 const asyncLocalStorage = new AsyncLocalStorage<{ isCSR: true }>();
 export function render(
   ui: ComponentChild,
@@ -59,7 +59,17 @@ function isCSR(): boolean {
   return asyncLocalStorage.getStore()?.isCSR === true;
 }
 
-interface SetupOptions {
+/**
+ * Options which can be passed to {@linkcode setup}.
+ */
+export interface SetupOptions {
+  /**
+   * @description Optionally, the {@linkcode Manifest} object which is exported from `fresh.gen.ts` can be set to this option.
+   *
+   * If this option is specified, emulation of partial rendering is enabled.
+   *
+   * The {@linkcode Manifest} object specified by this option is also used as the default value for {@linkcode CreateFreshContextOptions.manifest}, etc.
+   */
   manifest?: Manifest;
 }
 
@@ -70,7 +80,7 @@ interface SetupOptions {
  */
 export function setup(options?: SetupOptions) {
   if (options?.manifest) {
-    manifestHolder.manifest = options.manifest;
+    setDefaultManifest(options.manifest);
   }
 
   setupDOMEnvironmentOnce();
@@ -111,11 +121,10 @@ function setupPreactOptionsHooksOnce(
 ): void {
   if (cleanupVnodeHook) return;
 
-  const manifestAccessor = () => manifestHolder.manifest;
   const { cleanup, vnode } = createVnodeHook(
     options.vnode,
     createPartialsUpdater(
-      manifestAccessor,
+      maybeGetDefaultManifest,
       document,
     ),
     isCSR,

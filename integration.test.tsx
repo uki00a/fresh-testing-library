@@ -1,4 +1,3 @@
-import { Partial } from "$fresh/runtime.ts";
 import { createFreshContext } from "./server.ts";
 import {
   cleanup,
@@ -11,6 +10,8 @@ import { expect } from "$fresh-testing-library/expect.ts";
 import { assert } from "$std/assert/assert.ts";
 import { assertEquals } from "$std/assert/assert_equals.ts";
 import { assertExists } from "$std/assert/assert_exists.ts";
+import { assertStrictEquals } from "$std/assert/assert_strict_equals.ts";
+import { assertStringIncludes } from "$std/assert/assert_string_includes.ts";
 import { afterEach, beforeAll, describe, it } from "$std/testing/bdd.ts";
 import { cheerio } from "./deps/cheerio.ts";
 import { default as UserDetail } from "./demo/routes/users/[id].tsx";
@@ -20,6 +21,8 @@ import { handler } from "./demo/routes/(admin)/dashboard.tsx";
 import { createInMemoryUsers } from "./demo/services/users.ts";
 import DocPage from "./demo/routes/docs/[...path].tsx";
 import DocLayout from "./demo/routes/docs/_layout.tsx";
+import { assertDefaultResponseAsync } from "$fresh-testing-library/internal/test_utils/mod.ts";
+import type { State } from "🗺/users/_middleware.ts";
 
 describe("integration tests", () => {
   beforeAll(() => setup({ manifest }));
@@ -60,6 +63,53 @@ describe("integration tests", () => {
       assertEquals($dd.length, 2);
       assertEquals($dd.eq(0).text(), "123");
       assertEquals($dd.eq(1).text(), "45");
+    });
+
+    it("should use `SetupOptions.manifest` as the default manifest for `createFreshContext`", async () => {
+      // TODO: use `demo/routes/index.tsx` for testing.
+      const req = new Request("http://localhost:8003/users/1");
+      const user = Object.freeze({
+        id: 1,
+        name: "foo",
+        email: "foo@example.com",
+      });
+      const users = [user];
+      const state: State = {
+        users: {
+          all() {
+            return Promise.resolve(users);
+          },
+          getByID(id) {
+            const user = users.find((x) => x.id === id);
+            if (user == null) {
+              throw new Error("NotFound");
+            }
+            return Promise.resolve(user);
+          },
+        },
+      };
+      {
+        const ctx = createFreshContext(req, { manifest: undefined, state });
+        const res = await ctx.render();
+        await assertDefaultResponseAsync(res);
+      }
+
+      {
+        const ctx = createFreshContext(req, { state });
+        const res = await ctx.render();
+        assertStrictEquals(res.status, 200);
+        const html = await res.text();
+        assertStringIncludes(
+          html,
+          user.name,
+          "`routes/users/[id].tsx` should be rendered",
+        );
+        assertStringIncludes(
+          html,
+          user.email,
+          "`routes/users/[id].tsx` should be rendered",
+        );
+      }
     });
   });
 
