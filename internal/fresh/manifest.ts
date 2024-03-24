@@ -56,6 +56,10 @@ export function setDefaultManifest(manifest: Manifest) {
   defaultManifestContainer.manifest = manifest;
 }
 
+export function clearDefaultManifest() {
+  defaultManifestContainer.manifest = undefined;
+}
+
 export function maybeGetDefaultManifest(): Manifest | undefined {
   return defaultManifestContainer.manifest;
 }

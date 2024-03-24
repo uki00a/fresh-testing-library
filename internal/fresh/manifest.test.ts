@@ -9,7 +9,7 @@ import {
   determineRouteDestinationKind,
   findMatchingRouteAndPathPatternFromManifest,
   freshRoutePathToURLPattern,
-} from "./mod.ts";
+} from "./manifest.ts";
 import { loadManifest } from "../test_utils/mod.ts";
 
 describe("$fresh-testing-library/_util", () => {

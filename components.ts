@@ -26,6 +26,7 @@ import { userEvent } from "./deps/testing-library.ts";
 import { createPartialsUpdater } from "./internal/fresh/partials.ts";
 import { createVnodeHook } from "./internal/fresh/preact.ts";
 import {
+  clearDefaultManifest,
   maybeGetDefaultManifest,
   setDefaultManifest,
 } from "./internal/fresh/manifest.ts";
@@ -82,8 +83,9 @@ export interface SetupOptions {
 export function setup(options?: SetupOptions) {
   if (options?.manifest) {
     setDefaultManifest(options.manifest);
+  } else if (options && "manifest" in options) {
+    clearDefaultManifest();
   }
-
   setupDOMEnvironmentOnce();
   setupPreactOptionsHooksOnce(location);
 }
