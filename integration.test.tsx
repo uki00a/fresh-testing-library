@@ -21,7 +21,7 @@ import { createInMemoryUsers } from "./demo/services/users.ts";
 import DocPage from "./demo/routes/docs/[...path].tsx";
 import DocLayout from "./demo/routes/docs/_layout.tsx";
 
-describe("routes testing", () => {
+describe("integration tests", () => {
   beforeAll(() => setup({ manifest }));
   afterEach(cleanup);
 
