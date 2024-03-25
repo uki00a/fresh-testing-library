@@ -6,6 +6,7 @@ import type { Props as ClientNavContainerProps } from "./ClientNavContainer.ts";
 import type { PartialsUpdater } from "./partials.ts";
 import { ClientNavContainer } from "./ClientNavContainer.ts";
 import { Partial as FTLPartial } from "./Partial.ts";
+import { kFreshClientNavAttribute } from "./constants.ts";
 
 interface VNodeHook {
   (vnode: VNode): void;
@@ -15,8 +16,6 @@ interface CreateVnodeHookResult {
   vnode: VNodeHook;
   cleanup(): void;
 }
-
-const kFreshClientNavAttribute = "f-client-nav";
 
 export function createVnodeHook(
   next: VNodeHook | undefined,

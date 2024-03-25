@@ -155,11 +155,13 @@ describe("integration tests", () => {
           {...ctx}
           Component={() => (
             <>
-              {/* TODO: Set `f-client-nav` to `<nav>` instead of `<aside>` */}
-              <aside f-client-nav>
-                <nav>
+              <aside>
+                <nav f-client-nav>
                   <a href="/docs" f-partial="/docs/permissions">
                     {partialLinkText}
+                  </a>
+                  <a href="/docs" f-partial="/docs/no-such-page">
+                    NotFound
                   </a>
                 </nav>
               </aside>
