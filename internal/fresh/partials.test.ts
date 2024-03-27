@@ -36,7 +36,7 @@ Deno.test("extractPartialBoundaries", () => {
 </html>`);
   const boundaries = extractPartialBoundaries(document);
   assertStrictEquals(boundaries[0].name, "page");
-  assertStrictEquals(boundaries[0].index, 0);
+  assertStrictEquals(boundaries[0].key, "0");
   assertNotStrictEquals(boundaries[0].start, boundaries[0].end);
   assertStrictEquals(
     boundaries[0].start.parentNode,

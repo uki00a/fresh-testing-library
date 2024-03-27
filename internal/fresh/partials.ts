@@ -12,7 +12,7 @@ export interface PartialsUpdater {
 
 export interface PartialBoundary {
   name: string;
-  index: number;
+  key: string;
   start: Comment;
   end: Comment;
 }
@@ -49,11 +49,11 @@ export function extractPartialBoundaries(
         const endMarker = parsePartialMarkerComment(sibling);
         if (
           startMarker.name === endMarker.name &&
-          startMarker.index === endMarker.index
+          startMarker.key === endMarker.key
         ) {
           found.push({
             name: startMarker.name,
-            index: startMarker.index,
+            key: startMarker.key,
             start: startMarker.node,
             end: endMarker.node,
           });
@@ -75,12 +75,12 @@ function isComment(node: Node): node is Comment {
 interface PartialMarker {
   node: Comment;
   name: string;
-  index: number;
+  key: string;
 }
 
 function parsePartialMarkerComment(comment: Comment): PartialMarker {
-  const [, name, index] = comment.data.split(":");
-  return { node: comment, name, index: Number.parseInt(index) };
+  const [, name, key] = comment.data.split(":");
+  return { node: comment, name, key };
 }
 
 /**
@@ -193,7 +193,7 @@ export function createPartialsUpdater(
     const currentPartialBoundaries = extractPartialBoundaries(baseDocument);
     for (const newBoundary of newPartialBoundaries) {
       const currentBoundary = currentPartialBoundaries.find((x) =>
-        x.name === newBoundary.name && x.index === newBoundary.index
+        x.name === newBoundary.name && x.key === newBoundary.key
       );
       if (currentBoundary == null) continue;
 
