@@ -119,11 +119,11 @@ export function enablePartialNavigation(
   updatePartials: PartialsUpdater,
 ): () => void {
   const events: Array<
-    [HTMLElement, string, (event: Event) => unknown]
+    [Element, string, (event: Event) => unknown]
   > = [];
 
   function addEventListener(
-    element: HTMLElement,
+    element: Element,
     event: string,
     listener: (event: Event) => unknown,
   ) {
@@ -132,23 +132,37 @@ export function enablePartialNavigation(
     events.push([element, event, listener]);
   }
 
-  const anchors = container.querySelectorAll("a");
-  for (const anchor of anchors) {
-    const partial = anchor.getAttribute(kFreshPartialAttribute);
-    const href = partial ?? anchor.getAttribute("href");
-    if (href == null || !href.startsWith("/")) {
-      continue;
-    }
-
-    addEventListener(anchor, "click", (event) => {
+  function createClickListener(href: string) {
+    function onClick(event: Event): void {
       const url = new URL(href, origin);
       url.searchParams.set(kFreshPartialQueryParam, "true");
       const request = new Request(url);
       updatePartials(event, request);
-    });
+    }
+    return onClick;
   }
 
-  // TODO: support buttons.
+  const anchors = container.querySelectorAll("a");
+  for (const anchor of anchors) {
+    const partial = anchor.getAttribute(kFreshPartialAttribute);
+    const href = partial ?? anchor.getAttribute("href");
+    if (!isPartialLink(href)) {
+      continue;
+    }
+
+    addEventListener(anchor, "click", createClickListener(href));
+  }
+
+  const buttons = container.querySelectorAll(
+    `button[${kFreshPartialAttribute}]`,
+  );
+  for (const button of buttons) {
+    const href = button.getAttribute(kFreshPartialAttribute);
+    if (!isPartialLink(href)) {
+      continue;
+    }
+    addEventListener(button, "click", createClickListener(href));
+  }
   // TODO: support form partials.
 
   function cleanup(): void {
@@ -159,6 +173,10 @@ export function enablePartialNavigation(
   }
 
   return cleanup;
+}
+
+function isPartialLink(href: string | null): href is string {
+  return href != null && href.startsWith("/");
 }
 
 interface ManifestAccessor {
