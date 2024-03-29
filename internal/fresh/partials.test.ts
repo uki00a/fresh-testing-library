@@ -1,7 +1,7 @@
 import { assertExists } from "$std/assert/assert_exists.ts";
 import { assertNotStrictEquals } from "$std/assert/assert_not_strict_equals.ts";
 import { assertStrictEquals } from "$std/assert/assert_strict_equals.ts";
-import { assertSpyCallArgs, assertSpyCalls, spy } from "$std/testing/mock.ts";
+import { assertSpyCalls, spy } from "$std/testing/mock.ts";
 import {
   createPartialMarkerComment,
   enablePartialNavigation,
@@ -65,6 +65,57 @@ Deno.test({
   name: "enablePartialNavigation",
   permissions: "none",
   fn: async (t) => {
+    await t.step("enables partial navigation for `<a>`", () => {
+      const anchorWithFpartialId = crypto.randomUUID();
+      const anchorWithoutFpartialId = crypto.randomUUID();
+      const partialLink = "/pages/foo";
+      const href = "/docs/index";
+      const doc = createDocument(`<div id="container">
+  <a id="${anchorWithFpartialId}" f-partial="${partialLink}" href="/pages/bar">with f-partial</button>
+  <a id="${anchorWithoutFpartialId}" href="${href}">without f-partial</button>
+</div>`);
+      const container = doc.getElementById("container");
+      assertExists(container);
+
+      const updatePartials = spy<unknown, [Event, Request], Promise<unknown>>();
+      const origin = "http://localhost:8000";
+      enablePartialNavigation(
+        container,
+        origin,
+        updatePartials,
+      );
+      assertSpyCalls(updatePartials, 0);
+      {
+        const anchor = doc.getElementById(
+          anchorWithoutFpartialId,
+        );
+        assertExists(anchor);
+        anchor.click();
+        assertSpyCalls(updatePartials, 1);
+        const [{ args: [event, request] }] = updatePartials.calls;
+        assertStrictEquals(event.type, "click");
+        assertStrictEquals(request.method, "GET");
+        assertStrictEquals(
+          request.url,
+          `${origin}${href}?fresh-partial=true`,
+        );
+      }
+
+      {
+        const anchor = doc.getElementById(anchorWithFpartialId);
+        assertExists(anchor);
+        anchor.click();
+        assertSpyCalls(updatePartials, 2);
+        const [, { args: [event, request] }] = updatePartials.calls;
+        assertStrictEquals(event.type, "click");
+        assertStrictEquals(request.method, "GET");
+        assertStrictEquals(
+          request.url,
+          `${origin}${partialLink}?fresh-partial=true`,
+        );
+      }
+    });
+
     await t.step("supports <button>", () => {
       const buttonWithFpartialId = "button-with-f-partial";
       const buttonWithoutFpartialId = "button-without0f-partial";
