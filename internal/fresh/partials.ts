@@ -318,41 +318,7 @@ export function createPartialsUpdater(
 
     const handler = await createFreshHandler(manifest);
     const response = await handler(request);
-    const html = await response.text();
-    const newDocument = createDocument(html);
-    const newPartialBoundaries = extractPartialBoundaries(newDocument);
-    if (newPartialBoundaries.length === 0) {
-      return;
-    }
-    const currentPartialBoundaries = extractPartialBoundaries(baseDocument);
-    for (const newBoundary of newPartialBoundaries) {
-      const currentBoundary = currentPartialBoundaries.find((x) =>
-        x.name === newBoundary.name && x.key === newBoundary.key
-      );
-      if (currentBoundary == null) continue;
-
-      const parent = currentBoundary.start.parentNode;
-      if (parent == null) continue;
-
-      // TODO: support `PartialProps.mode`
-      let it = currentBoundary.start.nextSibling;
-      while (it !== currentBoundary.end) {
-        if (it == null) break;
-        const toRemove = it;
-        parent.removeChild(toRemove);
-        it = it.nextSibling;
-      }
-
-      const fragment = baseDocument.createDocumentFragment();
-      it = newBoundary.start.nextSibling;
-      while (it !== newBoundary.end) {
-        if (it == null) break;
-        const copy = baseDocument.importNode(it, true);
-        fragment.appendChild(copy);
-        it = it.nextSibling;
-      }
-      parent.insertBefore(fragment, currentBoundary.end);
-    }
+    await applyResponseToDocument(baseDocument, response);
     return;
   }
 
@@ -363,4 +329,46 @@ export function createPartialsUpdater(
   }
 
   return updatePartials;
+}
+
+export async function applyResponseToDocument(
+  baseDocument: Document,
+  response: Response,
+): Promise<void> {
+  const html = await response.text();
+  const newDocument = createDocument(html);
+  const newPartialBoundaries = extractPartialBoundaries(newDocument);
+  if (newPartialBoundaries.length === 0) {
+    return;
+  }
+  const currentPartialBoundaries = extractPartialBoundaries(baseDocument);
+  for (const newBoundary of newPartialBoundaries) {
+    const currentBoundary = currentPartialBoundaries.find((x) =>
+      x.name === newBoundary.name && x.key === newBoundary.key
+    );
+    if (currentBoundary == null) continue;
+
+    const parent = currentBoundary.start.parentNode;
+    if (parent == null) continue;
+
+    // TODO: support `PartialProps.mode`
+    let it = currentBoundary.start.nextSibling;
+    while (it !== currentBoundary.end) {
+      if (it == null) break;
+      const toRemove = it;
+      parent.removeChild(toRemove);
+      it = it.nextSibling;
+    }
+
+    const fragment = baseDocument.createDocumentFragment();
+    it = newBoundary.start.nextSibling;
+    while (it !== newBoundary.end) {
+      if (it == null) break;
+      const copy = baseDocument.importNode(it, true);
+      fragment.appendChild(copy);
+      it = it.nextSibling;
+    }
+    parent.insertBefore(fragment, currentBoundary.end);
+  }
+  return;
 }
