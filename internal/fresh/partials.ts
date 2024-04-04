@@ -413,24 +413,55 @@ export async function applyResponseToDocument(
     const parent = currentBoundary.start.parentNode;
     if (parent == null) continue;
 
-    // TODO: support `PartialProps.mode`
-    let it = currentBoundary.start.nextSibling;
-    while (it !== currentBoundary.end) {
-      if (it == null) break;
-      const toRemove = it;
-      parent.removeChild(toRemove);
-      it = it.nextSibling;
-    }
+    switch (newBoundary.replacementMode) {
+      case "replace":
+        {
+          let it = currentBoundary.start.nextSibling;
+          while (it !== currentBoundary.end) {
+            if (it == null) break;
+            const toRemove = it;
+            parent.removeChild(toRemove);
+            it = it.nextSibling;
+          }
 
-    const fragment = baseDocument.createDocumentFragment();
-    it = newBoundary.start.nextSibling;
-    while (it !== newBoundary.end) {
-      if (it == null) break;
-      const copy = baseDocument.importNode(it, true);
-      fragment.appendChild(copy);
-      it = it.nextSibling;
+          const fragment = baseDocument.createDocumentFragment();
+          it = newBoundary.start.nextSibling;
+          while (it !== newBoundary.end) {
+            if (it == null) break;
+            const copy = baseDocument.importNode(it, true);
+            fragment.appendChild(copy);
+            it = it.nextSibling;
+          }
+          parent.insertBefore(fragment, currentBoundary.end);
+        }
+        break;
+      case "append":
+        {
+          const fragment = baseDocument.createDocumentFragment();
+          let it = newBoundary.start.nextSibling;
+          while (it !== newBoundary.end) {
+            if (it == null) break;
+            const copy = baseDocument.importNode(it, true);
+            fragment.appendChild(copy);
+            it = it.nextSibling;
+          }
+          parent.insertBefore(fragment, currentBoundary.end);
+        }
+        break;
+      case "prepend":
+        {
+          const fragment = baseDocument.createDocumentFragment();
+          let it = newBoundary.start.nextSibling;
+          while (it !== newBoundary.end) {
+            if (it == null) break;
+            const copy = baseDocument.importNode(it, true);
+            fragment.appendChild(copy);
+            it = it.nextSibling;
+          }
+          parent.insertBefore(fragment, currentBoundary.start.nextSibling);
+        }
+        break;
     }
-    parent.insertBefore(fragment, currentBoundary.end);
   }
   return;
 }

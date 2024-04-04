@@ -5,6 +5,7 @@ import { assertStrictEquals } from "$std/assert/assert_strict_equals.ts";
 import { assertEquals } from "$std/assert/assert_equals.ts";
 import { assertSpyCalls, spy } from "$std/testing/mock.ts";
 import {
+  applyResponseToDocument,
   createPartialMarkerComment,
   enablePartialNavigation,
   extractPartialBoundaries,
@@ -266,6 +267,262 @@ Deno.test({
           assertStrictEquals(request.url, `${origin}${actionLink}`);
         }
       });
+    });
+  },
+});
+
+Deno.test({
+  name: "applyResponseToDocument",
+  permissions: "none",
+  fn: async (t) => {
+    await t.step("supports `replace` mode", async () => {
+      const doc = createDocument(`
+<html>
+  <body>
+    <header id="header">
+      Hello
+    </header>
+    <main id="main">
+      <!--frsh-partial:main:0:-->
+      First content
+      <!--/frsh-partial:main:0:-->
+    </main>
+    <footer f-client-nav id="footer">
+      <a href="/about">About</a>
+    </footer>
+  </body>
+</html>`);
+      const response = new Response(
+        `
+ <html>
+  <body>
+    <header id="header">
+      Hi
+    </header>
+    <main id="main">
+      <!--frsh-partial:main:0:-->
+      <div>
+        New content
+      </div>
+      <!--/frsh-partial:main:0:-->
+    </main>
+    <footer f-client-nav id="footer">
+      <a href="/blog">Blog</a>
+    </footer>
+  </body>
+</html>     
+`,
+        {
+          headers: {
+            "content-type": "text/html",
+          },
+        },
+      );
+      await applyResponseToDocument(doc, response);
+      const main = doc.getElementById("main");
+      assertExists(main);
+      assertStrictEquals(main.children.length, 1);
+      assertStrictEquals(main.children[0].tagName, "DIV");
+      assertStrictEquals(
+        main.children[0].textContent?.trim(),
+        "New content",
+        "A partial area should be replaced",
+      );
+
+      const header = doc.getElementById("header");
+      assertExists(header);
+      assertStrictEquals(
+        header.textContent?.trim(),
+        "Hello",
+        "A non-partial area should not be updated",
+      );
+
+      const footer = doc.getElementById("footer");
+      assertExists(footer);
+      assertStrictEquals(
+        footer.textContent?.trim(),
+        "About",
+        "A non-partial area should not be updated",
+      );
+    });
+
+    await t.step("supports `append` mode", async () => {
+      const doc = createDocument(`
+<html>
+  <body>
+    <header id="header">
+      Hello
+    </header>
+    <main id="main">
+      <!--frsh-partial:main:1:-->
+      <div>First content</div>
+      <!--/frsh-partial:main:1:-->
+    </main>
+    <footer f-client-nav id="footer">
+      <a href="/about">About</a>
+    </footer>
+  </body>
+</html>`);
+      const response = new Response(
+        `
+ <html>
+  <body>
+    <header id="header">
+      Hi
+    </header>
+    <main id="main">
+      <!--frsh-partial:main:1:-->
+      <section>
+        <h2>Title</h2>
+        <span>New content</span>
+      </section>
+      <div>
+        Another new content
+      </div>
+      <!--/frsh-partial:main:1:-->
+    </main>
+    <footer f-client-nav id="footer">
+      <a href="/blog">Blog</a>
+    </footer>
+  </body>
+</html>     
+`,
+        {
+          headers: {
+            "content-type": "text/html",
+          },
+        },
+      );
+      await applyResponseToDocument(doc, response);
+      const main = doc.getElementById("main");
+      assertExists(main);
+      assertStrictEquals(main.children.length, 3);
+      assertStrictEquals(main.children[0].tagName, "DIV");
+      assertStrictEquals(main.children[1].tagName, "SECTION");
+      assertStrictEquals(main.children[2].tagName, "DIV");
+      assertStrictEquals(
+        main.children[0].textContent?.trim(),
+        "First content",
+      );
+      assertStrictEquals(
+        main.children[1].children.length,
+        2,
+        "A new content should be appended",
+      );
+      assertStrictEquals(
+        main.children[1].children[0].textContent?.trim(),
+        "Title",
+      );
+      assertStrictEquals(
+        main.children[1].children[1].textContent?.trim(),
+        "New content",
+      );
+      assertStrictEquals(
+        main.children[2].textContent?.trim(),
+        "Another new content",
+        "A new content should be appended",
+      );
+
+      const header = doc.getElementById("header");
+      assertExists(header);
+      assertStrictEquals(
+        header.textContent?.trim(),
+        "Hello",
+        "A non-partial area should not be updated",
+      );
+
+      const footer = doc.getElementById("footer");
+      assertExists(footer);
+      assertStrictEquals(
+        footer.textContent?.trim(),
+        "About",
+        "A non-partial area should not be updated",
+      );
+    });
+
+    await t.step("supports `prepend` mode", async () => {
+      const doc = createDocument(`
+<html>
+  <body>
+    <header id="header">
+      Hello
+    </header>
+    <main id="main">
+      <!--frsh-partial:main:2:-->
+      <div>First content</div>
+      <!--/frsh-partial:main:2:-->
+    </main>
+    <footer f-client-nav id="footer">
+      <a href="/about">About</a>
+    </footer>
+  </body>
+</html>`);
+      const response = new Response(
+        `
+ <html>
+  <body>
+    <header id="header">
+      Hi
+    </header>
+    <main id="main">
+      <!--frsh-partial:main:2:-->
+      <div>
+        New content
+      </div>
+      <div>
+        Another new content
+      </div>
+      <!--/frsh-partial:main:2:-->
+    </main>
+    <footer f-client-nav id="footer">
+      <a href="/blog">Blog</a>
+    </footer>
+  </body>
+</html>     
+`,
+        {
+          headers: {
+            "content-type": "text/html",
+          },
+        },
+      );
+      await applyResponseToDocument(doc, response);
+      const main = doc.getElementById("main");
+      assertExists(main);
+      assertStrictEquals(main.children.length, 3);
+      assertStrictEquals(main.children[0].tagName, "DIV");
+      assertStrictEquals(main.children[1].tagName, "DIV");
+      assertStrictEquals(main.children[2].tagName, "DIV");
+      assertStrictEquals(
+        main.children[0].textContent?.trim(),
+        "New content",
+        "A new content should be prepended",
+      );
+      assertStrictEquals(
+        main.children[1].textContent?.trim(),
+        "Another new content",
+        "A new content should be prepended",
+      );
+      assertStrictEquals(
+        main.children[2].textContent?.trim(),
+        "First content",
+      );
+
+      const header = doc.getElementById("header");
+      assertExists(header);
+      assertStrictEquals(
+        header.textContent?.trim(),
+        "Hello",
+        "A non-partial area should not be updated",
+      );
+
+      const footer = doc.getElementById("footer");
+      assertExists(footer);
+      assertStrictEquals(
+        footer.textContent?.trim(),
+        "About",
+        "A non-partial area should not be updated",
+      );
     });
   },
 });
