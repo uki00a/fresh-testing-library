@@ -2,6 +2,7 @@
 /// <reference lib="dom.iterable" />
 
 import type { Manifest } from "$fresh/server.ts";
+import type { PartialProps } from "$fresh/src/runtime/Partial.tsx";
 import { createHandler } from "$fresh/server.ts";
 import { createDocument } from "../jsdom/mod.ts";
 import {
@@ -17,6 +18,7 @@ export interface PartialsUpdater {
 export interface PartialBoundary {
   name: string;
   key: string;
+  replacementMode: ReplacementMode;
   start: Comment;
   end: Comment;
 }
@@ -58,6 +60,7 @@ export function extractPartialBoundaries(
           found.push({
             name: startMarker.name,
             key: startMarker.key,
+            replacementMode: startMarker.replacementMode,
             start: startMarker.node,
             end: endMarker.node,
           });
@@ -76,26 +79,84 @@ function isComment(node: Node): node is Comment {
   return node.nodeType === 8;
 }
 
+type ReplacementMode = NonNullable<PartialProps["mode"]>;
 interface PartialMarker {
   node: Comment;
   name: string;
   key: string;
+  replacementMode: ReplacementMode;
 }
 
 function parsePartialMarkerComment(comment: Comment): PartialMarker {
-  const [, name, key] = comment.data.split(":");
-  return { node: comment, name, key };
+  assert(
+    comment.data.startsWith(kFreshPartialStartMarkerCommentPrefix) ||
+      comment.data.startsWith(kFreshPartialEndMarkerCommentPrefix),
+    `[BUG] '${comment.data}' should start with '${kFreshPartialStartMarkerCommentPrefix}' or '${kFreshPartialEndMarkerCommentPrefix}'`,
+  );
+  const parts = comment.data.split(":");
+  assert(
+    parts.length === 4,
+    `[BUG] Unexpected marker comment is detected: '${comment.data}'`,
+  );
+  const [, name, replacementMode, key] = parts;
+  return {
+    node: comment,
+    name,
+    replacementMode: decodeReplacementMode(replacementMode),
+    key,
+  };
+}
+
+/**
+ * Based on {@link https://github.com/denoland/fresh/blob/1.6.8/src/constants.ts#L9-L13}.
+ *
+ * @license
+ * MIT License
+ *
+ * Copyright (c) 2021-2023 Luca Casonato
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of
+ * this software and associated documentation files (the "Software"), to deal in
+ * the Software without restriction, including without limitation the rights to
+ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+ * the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+ * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+function decodeReplacementMode(encoded: string): ReplacementMode {
+  const code = Number.parseInt(encoded);
+  assert(
+    code === 0 || code === 1 || code === 2,
+    `[BUG] Unknown replacement mode is detected: '${encoded}'`,
+  );
+  switch (code) {
+    case 0:
+      return "replace";
+    case 1:
+      return "append";
+    case 2:
+      return "prepend";
+  }
 }
 
 /**
  * ```html
- * <!--frsh-partial:<partial-name>:<index>:-->
+ * <!--frsh-partial:<partial-name>:<replacement-mode>:<key>-->
  * ```
  */
 const kFreshPartialStartMarkerCommentPrefix = "frsh-partial:";
 /**
  * ```html
- * <!--/frsh-partial:<partial-name>:<index>:-->
+ * <!--/frsh-partial:<partial-name>:<replacement-mode>:<key>-->
  * ```
  */
 const kFreshPartialEndMarkerCommentPrefix =
@@ -200,6 +261,7 @@ export function enablePartialNavigation(
 /**
  * This function is based on {@link https://github.com/denoland/fresh/blob/1.6.8/src/runtime/entrypoints/main.ts#L1053-L1100} which is licensed as follows:
  *
+ * @license
  * MIT License
  *
  * Copyright (c) 2021-2023 Luca Casonato
@@ -318,41 +380,7 @@ export function createPartialsUpdater(
 
     const handler = await createFreshHandler(manifest);
     const response = await handler(request);
-    const html = await response.text();
-    const newDocument = createDocument(html);
-    const newPartialBoundaries = extractPartialBoundaries(newDocument);
-    if (newPartialBoundaries.length === 0) {
-      return;
-    }
-    const currentPartialBoundaries = extractPartialBoundaries(baseDocument);
-    for (const newBoundary of newPartialBoundaries) {
-      const currentBoundary = currentPartialBoundaries.find((x) =>
-        x.name === newBoundary.name && x.key === newBoundary.key
-      );
-      if (currentBoundary == null) continue;
-
-      const parent = currentBoundary.start.parentNode;
-      if (parent == null) continue;
-
-      // TODO: support `PartialProps.mode`
-      let it = currentBoundary.start.nextSibling;
-      while (it !== currentBoundary.end) {
-        if (it == null) break;
-        const toRemove = it;
-        parent.removeChild(toRemove);
-        it = it.nextSibling;
-      }
-
-      const fragment = baseDocument.createDocumentFragment();
-      it = newBoundary.start.nextSibling;
-      while (it !== newBoundary.end) {
-        if (it == null) break;
-        const copy = baseDocument.importNode(it, true);
-        fragment.appendChild(copy);
-        it = it.nextSibling;
-      }
-      parent.insertBefore(fragment, currentBoundary.end);
-    }
+    await applyResponseToDocument(baseDocument, response);
     return;
   }
 
@@ -363,4 +391,79 @@ export function createPartialsUpdater(
   }
 
   return updatePartials;
+}
+
+export async function applyResponseToDocument(
+  baseDocument: Document,
+  response: Response,
+): Promise<void> {
+  const html = await response.text();
+  const newDocument = createDocument(html);
+  const newPartialBoundaries = extractPartialBoundaries(newDocument);
+  if (newPartialBoundaries.length === 0) {
+    return;
+  }
+  const currentPartialBoundaries = extractPartialBoundaries(baseDocument);
+  for (const newBoundary of newPartialBoundaries) {
+    const currentBoundary = currentPartialBoundaries.find((x) =>
+      x.name === newBoundary.name && x.key === newBoundary.key
+    );
+    if (currentBoundary == null) continue;
+
+    const parent = currentBoundary.start.parentNode;
+    if (parent == null) continue;
+
+    switch (newBoundary.replacementMode) {
+      case "replace":
+        {
+          let it = currentBoundary.start.nextSibling;
+          while (it !== currentBoundary.end) {
+            if (it == null) break;
+            const toRemove = it;
+            parent.removeChild(toRemove);
+            it = it.nextSibling;
+          }
+          const fragment = importNewBoundaryIntoFragment(
+            newBoundary,
+            baseDocument,
+          );
+          parent.insertBefore(fragment, currentBoundary.end);
+        }
+        break;
+      case "append":
+        {
+          const fragment = importNewBoundaryIntoFragment(
+            newBoundary,
+            baseDocument,
+          );
+          parent.insertBefore(fragment, currentBoundary.end);
+        }
+        break;
+      case "prepend":
+        {
+          const fragment = importNewBoundaryIntoFragment(
+            newBoundary,
+            baseDocument,
+          );
+          parent.insertBefore(fragment, currentBoundary.start.nextSibling);
+        }
+        break;
+    }
+  }
+  return;
+}
+
+function importNewBoundaryIntoFragment(
+  newBoundary: PartialBoundary,
+  baseDocument: Document,
+): DocumentFragment {
+  const fragment = baseDocument.createDocumentFragment();
+  let it = newBoundary.start.nextSibling;
+  while (it !== newBoundary.end) {
+    if (it == null) break;
+    const copy = baseDocument.importNode(it, true);
+    fragment.appendChild(copy);
+    it = it.nextSibling;
+  }
+  return fragment;
 }
