@@ -4,7 +4,11 @@
 import type { Manifest } from "$fresh/server.ts";
 import { createHandler } from "$fresh/server.ts";
 import { createDocument } from "../jsdom/mod.ts";
-import { kFreshPartialQueryParam } from "./constants.ts";
+import {
+  kFreshClientNavAttribute,
+  kFreshPartialQueryParam,
+} from "./constants.ts";
+import { assert } from "../assert/mod.ts";
 
 export interface PartialsUpdater {
   (event: Event, request: Request): Promise<unknown>;
@@ -112,6 +116,15 @@ export function createPartialMarkerComment(
   return `${prefix}${body}`;
 }
 
+function isClientNavEnabled(el: Element): boolean {
+  const container = el.closest(`[${kFreshClientNavAttribute}]`);
+  if (container == null) return false;
+  return container.getAttribute(kFreshClientNavAttribute) !== "false";
+}
+
+type PartialEventListener =
+  | ((event: MouseEvent) => void)
+  | ((event: SubmitEvent) => void);
 const kFreshPartialAttribute = "f-partial";
 export function enablePartialNavigation(
   container: HTMLElement,
@@ -119,27 +132,17 @@ export function enablePartialNavigation(
   updatePartials: PartialsUpdater,
 ): () => void {
   const events: Array<
-    [Element, string, (event: Event) => unknown]
+    [Element, string, PartialEventListener]
   > = [];
 
   function addEventListener(
     element: Element,
     event: string,
-    listener: (event: Event) => unknown,
-  ) {
+    listener: PartialEventListener,
+  ): void {
     // @ts-ignore This line is covered by the test
     element.addEventListener(event, listener);
     events.push([element, event, listener]);
-  }
-
-  function createClickListener(href: string) {
-    function onClick(event: Event): void {
-      const url = new URL(href, origin);
-      url.searchParams.set(kFreshPartialQueryParam, "true");
-      const request = new Request(url);
-      updatePartials(event, request);
-    }
-    return onClick;
   }
 
   const anchors = container.querySelectorAll("a");
@@ -157,13 +160,32 @@ export function enablePartialNavigation(
     `button[${kFreshPartialAttribute}]`,
   );
   for (const button of buttons) {
+    assert(isButton(button));
+    if (button.form != null) {
+      continue;
+    }
     const href = button.getAttribute(kFreshPartialAttribute);
     if (!isPartialLink(href)) {
       continue;
     }
     addEventListener(button, "click", createClickListener(href));
   }
-  // TODO: support form partials.
+
+  const forms = container.getElementsByTagName("form");
+  const onSubmit = createSubmitListener(updatePartials, origin);
+  for (const form of forms) {
+    addEventListener(form, "submit", onSubmit);
+  }
+
+  function createClickListener(href: string) {
+    function onClick(event: MouseEvent): void {
+      const url = new URL(href, origin);
+      url.searchParams.set(kFreshPartialQueryParam, "true");
+      const request = new Request(url);
+      updatePartials(event, request);
+    }
+    return onClick;
+  }
 
   function cleanup(): void {
     for (const [element, event, listener] of events) {
@@ -173,6 +195,100 @@ export function enablePartialNavigation(
   }
 
   return cleanup;
+}
+
+/**
+ * This function is based on {@link https://github.com/denoland/fresh/blob/1.6.8/src/runtime/entrypoints/main.ts#L1053-L1100} which is licensed as follows:
+ *
+ * MIT License
+ *
+ * Copyright (c) 2021-2023 Luca Casonato
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of
+ * this software and associated documentation files (the "Software"), to deal in
+ * the Software without restriction, including without limitation the rights to
+ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+ * the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+ * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+function createSubmitListener(
+  updatePartials: PartialsUpdater,
+  origin: string,
+): (event: SubmitEvent) => void {
+  return onSubmit;
+
+  function onSubmit(event: SubmitEvent) {
+    const form = event.target;
+    if (form == null || !isForm(form) || event.defaultPrevented) {
+      return;
+    }
+
+    const maybeSubmitter = event.submitter;
+    if (maybeSubmitter == null || !isClientNavEnabled(maybeSubmitter)) {
+      return;
+    }
+
+    const action = form.getAttribute(kFreshPartialAttribute) ??
+      maybeSubmitter?.getAttribute("formaction") ??
+      form.getAttribute(kFreshPartialAttribute) ??
+      form.action;
+
+    if (action == "") {
+      return;
+    }
+
+    const method = event.submitter?.getAttribute("formmethod") ??
+      form.method;
+    const lowerMethod = method.toLowerCase();
+    const isNotSupportedMethod = lowerMethod !== "get" &&
+      lowerMethod !== "post" &&
+      lowerMethod !== "dialog";
+    if (isNotSupportedMethod) {
+      return;
+    }
+
+    const url = new URL(action, origin);
+    let requestInit: RequestInit | undefined;
+    assert(
+      form.ownerDocument.defaultView,
+      "[BUG] `ownerDocument.defaultView` should be defined",
+    );
+    if (lowerMethod === "get") {
+      const formData = new form.ownerDocument.defaultView.FormData(form);
+      const params = new form.ownerDocument.defaultView.URLSearchParams(
+        // @ts-expect-error This should be correct
+        formData,
+      );
+      url.search = `?${params.toString()}`;
+    } else {
+      const _formData = new form.ownerDocument.defaultView.FormData(form);
+      const body = new FormData();
+      for (const [key, value] of _formData.entries()) {
+        body.set(key, value);
+      }
+      requestInit = { body, method };
+    }
+    const request = new Request(url, requestInit);
+    updatePartials(event, request);
+  }
+}
+
+function isButton(el: Element): el is HTMLButtonElement {
+  return el.tagName === "BUTTON";
+}
+
+function isForm(el: Element | EventTarget): el is HTMLFormElement {
+  return "tagName" in el && el.tagName === "FORM";
 }
 
 function isPartialLink(href: string | null): href is string {

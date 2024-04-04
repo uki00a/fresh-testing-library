@@ -1,6 +1,8 @@
+import { assert } from "$std/assert/assert.ts";
 import { assertExists } from "$std/assert/assert_exists.ts";
 import { assertNotStrictEquals } from "$std/assert/assert_not_strict_equals.ts";
 import { assertStrictEquals } from "$std/assert/assert_strict_equals.ts";
+import { assertEquals } from "$std/assert/assert_equals.ts";
 import { assertSpyCalls, spy } from "$std/testing/mock.ts";
 import {
   createPartialMarkerComment,
@@ -156,6 +158,113 @@ Deno.test({
           `${origin}${partialLink}?fresh-partial=true`,
         );
       }
+    });
+
+    await t.step("form partials", async (t) => {
+      await t.step("supports `GET`", () => {
+        const actionLink = "/posts/search";
+        const formWithPartialEnabledId = "form-with-partial-enabled";
+        const doc = createDocument(`<div id="container" f-client-nav>
+  <form id="${formWithPartialEnabledId}" action="${actionLink}" method="GET">
+    <input type="text" value="Deno" name="title" />
+    <input type="text" value="Article" name="category" />
+    <button
+      type="submit"
+      form="${formWithPartialEnabledId}"
+      >
+      Submit
+    </button>
+  </form>
+</div>`);
+        const container = doc.getElementById("container");
+        assertExists(container);
+        const updatePartials = spy<
+          unknown,
+          [Event, Request],
+          Promise<unknown>
+        >();
+        const origin = "http://localhost:8001";
+        enablePartialNavigation(
+          container,
+          origin,
+          updatePartials,
+        );
+        const form = doc.getElementById(formWithPartialEnabledId);
+        assertExists(form);
+        assertSpyCalls(updatePartials, 0);
+        {
+          const submitter = form.querySelector("button[type=submit]");
+          assertExists(submitter);
+          assert("click" in submitter && typeof submitter.click === "function");
+          submitter.click();
+          assertSpyCalls(updatePartials, 1);
+          const [{ args: [event, request] }] = updatePartials.calls;
+          assertStrictEquals(event.type, "submit");
+          assertStrictEquals(request.method, "GET");
+          const url = new URL(request.url);
+          assertStrictEquals(url.origin, origin);
+          assertStrictEquals(url.pathname, actionLink);
+          assertStrictEquals(url.searchParams.size, 2);
+          assertStrictEquals(url.searchParams.get("title"), "Deno");
+          assertStrictEquals(url.searchParams.get("category"), "Article");
+        }
+      });
+      await t.step("supports `POST`", async () => {
+        const actionLink = "/posts/new";
+        const formWithPartialEnabledId = "form-with-partial-enabled";
+        const doc = createDocument(`<div id="container" f-client-nav>
+  <form id="${formWithPartialEnabledId}">
+    <input type="text" value="This is a post" name="title" />
+    <button
+      type="submit"
+      formmethod="POST"
+      formaction="${actionLink}"
+      form="${formWithPartialEnabledId}"
+      >
+      Submit
+    </button>
+  </form>
+</div>`);
+        const container = doc.getElementById("container");
+        assertExists(container);
+        const updatePartials = spy<
+          unknown,
+          [Event, Request],
+          Promise<unknown>
+        >();
+        const origin = "http://localhost:8000";
+        enablePartialNavigation(
+          container,
+          origin,
+          updatePartials,
+        );
+        const form = doc.getElementById(formWithPartialEnabledId);
+        assertExists(form);
+        assertSpyCalls(updatePartials, 0);
+        {
+          const submitter = form.querySelector("button[type=submit]");
+          assertExists(submitter);
+          assert("click" in submitter && typeof submitter.click === "function");
+          submitter.click();
+          assertSpyCalls(updatePartials, 1);
+          const [{ args: [event, request] }] = updatePartials.calls;
+          assertStrictEquals(event.type, "submit");
+          assertStrictEquals(request.method, "POST");
+          const formData = await request.formData();
+          const data = Array.from(formData.entries()).reduce(
+            (data: Record<string, unknown>, entry) => {
+              const [key, value] = entry;
+              data[key] = value;
+              return data;
+            },
+            {},
+          );
+          assertEquals(data, {
+            "title": "This is a post",
+          });
+          assertStrictEquals(request.url, `${origin}${actionLink}`);
+        }
+      });
     });
   },
 });
