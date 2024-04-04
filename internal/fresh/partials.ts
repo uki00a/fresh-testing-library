@@ -423,45 +423,47 @@ export async function applyResponseToDocument(
             parent.removeChild(toRemove);
             it = it.nextSibling;
           }
-
-          const fragment = baseDocument.createDocumentFragment();
-          it = newBoundary.start.nextSibling;
-          while (it !== newBoundary.end) {
-            if (it == null) break;
-            const copy = baseDocument.importNode(it, true);
-            fragment.appendChild(copy);
-            it = it.nextSibling;
-          }
+          const fragment = importNewBoundaryIntoFragment(
+            newBoundary,
+            baseDocument,
+          );
           parent.insertBefore(fragment, currentBoundary.end);
         }
         break;
       case "append":
         {
-          const fragment = baseDocument.createDocumentFragment();
-          let it = newBoundary.start.nextSibling;
-          while (it !== newBoundary.end) {
-            if (it == null) break;
-            const copy = baseDocument.importNode(it, true);
-            fragment.appendChild(copy);
-            it = it.nextSibling;
-          }
+          const fragment = importNewBoundaryIntoFragment(
+            newBoundary,
+            baseDocument,
+          );
           parent.insertBefore(fragment, currentBoundary.end);
         }
         break;
       case "prepend":
         {
-          const fragment = baseDocument.createDocumentFragment();
-          let it = newBoundary.start.nextSibling;
-          while (it !== newBoundary.end) {
-            if (it == null) break;
-            const copy = baseDocument.importNode(it, true);
-            fragment.appendChild(copy);
-            it = it.nextSibling;
-          }
+          const fragment = importNewBoundaryIntoFragment(
+            newBoundary,
+            baseDocument,
+          );
           parent.insertBefore(fragment, currentBoundary.start.nextSibling);
         }
         break;
     }
   }
   return;
+}
+
+function importNewBoundaryIntoFragment(
+  newBoundary: PartialBoundary,
+  baseDocument: Document,
+): DocumentFragment {
+  const fragment = baseDocument.createDocumentFragment();
+  let it = newBoundary.start.nextSibling;
+  while (it !== newBoundary.end) {
+    if (it == null) break;
+    const copy = baseDocument.importNode(it, true);
+    fragment.appendChild(copy);
+    it = it.nextSibling;
+  }
+  return fragment;
 }
