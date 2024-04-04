@@ -161,7 +161,7 @@ Deno.test({
     });
 
     await t.step("form partials", async (t) => {
-      await t.step("supports `GET`", async () => {
+      await t.step("supports `GET`", () => {
         const actionLink = "/posts/search";
         const formWithPartialEnabledId = "form-with-partial-enabled";
         const doc = createDocument(`<div id="container" f-client-nav>
