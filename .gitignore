@@ -11,3 +11,6 @@
 
 # Fresh build directory
 _fresh/
+
+tmp/
+coverage/
