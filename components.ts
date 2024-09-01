@@ -99,6 +99,13 @@ function setupDOMEnvironmentOnce(): void {
 
 function setupDocument(): void {
   globalThis.document = createDocument();
+  if (globalThis.window == null) {
+    // NOTE: `window` will be removed in Deno v2
+    // See: https://github.com/testing-library/dom-testing-library/blob/v8.20.0/src/helpers.ts#L20-L26
+    // TODO: Find a better solution
+    // @ts-expect-error This is intended
+    globalThis.window = globalThis;
+  }
 }
 
 function setupUserEvent(): void {

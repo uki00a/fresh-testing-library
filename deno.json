@@ -27,7 +27,7 @@
     "🔧/": "./demo/services/",
     "$fresh-testing-library": "./mod.ts",
     "$fresh-testing-library/": "./",
-    "$gfm": "https://deno.land/x/gfm@0.2.5/mod.ts",
+    "$gfm": "jsr:@deno/gfm@0.9.0",
     "msw": "npm:msw@2.0.8"
   },
   "compilerOptions": { "jsx": "react-jsx", "jsxImportSource": "preact" },
