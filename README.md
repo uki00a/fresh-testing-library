@@ -45,42 +45,8 @@ and
 [@testing-library/user-event](https://github.com/testing-library/user-event).
 This module can be used to test island components.
 
-```tsx
-import {
-  cleanup,
-  render,
-  setup,
-  userEvent,
-} from "$fresh-testing-library/components.ts";
-import { expect } from "$fresh-testing-library/expect.ts";
-import { signal } from "@preact/signals";
-import { afterEach, beforeAll, describe, it } from "$std/testing/bdd.ts";
-
-import Counter from "🏝️/Counter.tsx";
-import { default as manifest } from "./demo/fresh.gen.ts";
-
-describe("islands/Counter.tsx", () => {
-  beforeAll(() => setup({ manifest }));
-  afterEach(cleanup);
-
-  it("should work", async () => {
-    const count = signal(9);
-    const user = userEvent.setup();
-    const screen = render(<Counter count={count} />);
-    const plusOne = screen.getByRole("button", { name: "+1" });
-    const minusOne = screen.getByRole("button", { name: "-1" });
-    expect(screen.getByText("9")).toBeInTheDocument();
-
-    await user.click(plusOne);
-    expect(screen.queryByText("9")).not.toBeInTheDocument();
-    expect(screen.getByText("10")).toBeInTheDocument();
-
-    await user.click(minusOne);
-    expect(screen.getByText("9")).toBeInTheDocument();
-    expect(screen.queryByText("10")).not.toBeInTheDocument();
-  });
-});
-```
+See [examples/island-component.test.tsx](examples/island-component.test.tsx) for
+usage.
 
 ### `expect()` API
 
@@ -92,119 +58,33 @@ packages, so it is compatible with Jest.
 ```ts
 import { expect, fn } from "$fresh-testing-library/expect.ts";
 
-Deno.test("expect", () => {
-  expect(1).toBe(1);
+expect(1).toBe(1);
 
-  const spy = fn();
-  expect(spy).not.toBeCalled();
-  spy();
-  expect(spy).toBeCalled();
+const spy = fn();
+expect(spy).not.toBeCalled();
+spy();
+expect(spy).toBeCalled();
 
-  // Matchers provided by `@testing-library/jest-dom` are also supported.
-  expect(expect(null).toBeInTheDocument).toBeTruthy();
-});
+// Matchers provided by `@testing-library/jest-dom` are also supported.
+expect(expect(null).toBeInTheDocument).toBeTruthy();
 ```
 
 ### Testing fresh middlewares
 
-You can test fresh middlewares using `createFreshContext()` API:
-
-```ts
-import { createFreshContext } from "$fresh-testing-library/server.ts";
-import { assert } from "$std/assert/assert.ts";
-import { assertEquals } from "$std/assert/assert_equals.ts";
-import { describe, it } from "$std/testing/bdd.ts";
-
-import { createLoggerMiddleware } from "./demo/routes/(_middlewares)/logger.ts";
-import manifest from "./demo/fresh.gen.ts";
-
-describe("createLoggerMiddleware", () => {
-  it("returns a middleware which logs the information about each request", async () => {
-    const messages: Array<string> = [];
-    const testingLogger = {
-      info(...args: Array<unknown>) {
-        messages.push(args.map(String).join(""));
-      },
-    };
-    const middleware = createLoggerMiddleware(testingLogger);
-    const path = `/api/users/123`;
-    const req = new Request(`http://localhost:3000${path}`);
-    const ctx = createFreshContext(req, { manifest });
-    await middleware(req, ctx);
-    assertEquals(messages, [
-      `<-- GET ${path}`,
-      `--> GET ${path} 200`,
-    ]);
-  });
-});
-```
+You can test fresh middlewares using `createFreshContext()` API. See
+[examples/middleware.test.ts](examples/middleware.test.ts) for usage.
 
 ### Testing fresh handlers
 
-You can also test fresh handlers using `createFreshContext()` API:
-
-```ts
-import { createFreshContext } from "$fresh-testing-library/server.ts";
-
-import { assert } from "$std/assert/assert.ts";
-import { assertEquals } from "$std/assert/assert_equals.ts";
-import { describe, it } from "$std/testing/bdd.ts";
-
-import { handler } from "./demo/routes/api/users/[id].ts";
-import manifest from "./demo/fresh.gen.ts";
-
-describe("handler.GET", () => {
-  it("should work", async () => {
-    assert(handler.GET);
-
-    const req = new Request("http://localhost:8000/api/users/1");
-    const ctx = createFreshContext(req, { manifest });
-    assertEquals(ctx.params, { id: "1" });
-
-    const res = await handler.GET(req, ctx);
-    assertEquals(res.status, 200);
-    assertEquals(await res.text(), "bob");
-  });
-});
-```
+You can also test fresh handlers using `createFreshContext()` API. See
+[examples/handler.test.ts](examples/handler.test.ts) for usage.
 
 ### Testing async route components
 
 You can test async route components by combining `createFreshContext()` and
-`render()`:
-
-```ts
-import {
-  cleanup,
-  getByText,
-  render,
-  setup,
-} from "$fresh-testing-library/components.ts";
-import { createFreshContext } from "$fresh-testing-library/server.ts";
-import { assertExists } from "$std/assert/assert_exists.ts";
-import { afterEach, beforeAll, describe, it } from "$std/testing/bdd.ts";
-import { default as UserDetail } from "./demo/routes/users/[id].tsx";
-import { default as manifest } from "./demo/fresh.gen.ts";
-import { createInMemoryUsers } from "./demo/services/users.ts";
-
-describe("routes/users/[id].tsx", () => {
-  beforeAll(() => setup({ manifest }));
-  afterEach(cleanup);
-
-  it("should work", async () => {
-    const req = new Request("http://localhost:8000/users/2");
-    const state = { users: createInMemoryUsers() };
-    const ctx = createFreshContext<void, typeof state>(req, {
-      // NOTE: If `manifest` option was specified in `setup()`, it can be omitted here.
-      // It is also possible to inject dependencies into `ctx.state` with `state` option.
-      state,
-    });
-    const screen = render(await UserDetail(req, ctx));
-    const group = screen.getByRole("group");
-    assertExists(getByText(group, "bar"));
-  });
-});
-```
+`render()`. See
+[examples/async-component.test.tsx](examples/async-component.test.tsx) for
+details.
 
 ### Submodules
 
@@ -242,32 +122,5 @@ First, add the following setting to `deno.json`:
 }
 ```
 
-Then you can use MSW as follows:
-
-```ts
-import { http, HttpResponse } from "msw";
-import { setupServer } from "msw/node";
-import { expect } from "$fresh-testing-library/expect.ts";
-import { afterAll, beforeAll, describe, it } from "$std/testing/bdd.ts";
-
-// You should pass `--location` flag.
-expect(location).toBeTruthy();
-
-describe("msw", () => {
-  const server = setupServer(
-    http.get(`${location.origin}/api/user`, () =>
-      HttpResponse.json({
-        id: 1,
-        name: "foo",
-      })),
-  );
-
-  beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
-  afterAll(() => server.close());
-
-  it("can be used to intercept requests", async () => {
-    const res = await fetch("/api/user");
-    expect(await res.json()).toEqual({ id: 1, name: "foo" });
-  });
-});
-```
+Now you can use MSW! See [examples/msw.test.ts](examples/msw.test.ts) for
+details.
