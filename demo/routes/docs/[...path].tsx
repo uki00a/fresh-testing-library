@@ -35,6 +35,7 @@ export default function DocPage(props: PageProps<Data>) {
           data-color-mode="auto"
           data-dark-theme="dark"
           class="p-4 mx-auto w-full markdown-body"
+          // deno-lint-ignore react-no-dangera
           dangerouslySetInnerHTML={{ __html: props.data.content }}
         />
       </Partial>
