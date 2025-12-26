@@ -16,6 +16,7 @@ This module does not require any permissions.
 
 ## `$fresh-testing-library/expect.ts`
 
-|   Permission   | Value |                                    Description                                    |
-| :------------: | :---: | :-------------------------------------------------------------------------------: |
-| `--allow-read` |  `*`  | This module depends on `npm:expect` which requires the `--allow-read` permission. |
+|   Permission   | Value |                                    Description                                     |
+| :------------: | :---: | :--------------------------------------------------------------------------------: |
+| `--allow-read` |  `*`  | This module depends on `npm:expect` which requires the `--allow-read` permission.  |
+| `--allow-env`  |  `*`  | This module depends on `npm:react-is` which requires the `--allow-env` permission. |
