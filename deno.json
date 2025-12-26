@@ -31,6 +31,9 @@
     "msw": "npm:msw@2.0.8"
   },
   "compilerOptions": { "jsx": "react-jsx", "jsxImportSource": "preact" },
+  "fmt": {
+    "exclude": ["demo/static/*"]
+  },
   "lint": {
     "rules": { "include": ["no-console"], "tags": ["fresh", "recommended"] }
   }
